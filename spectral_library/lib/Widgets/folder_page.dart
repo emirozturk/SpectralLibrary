@@ -33,11 +33,11 @@ class _FolderPageState extends State<FolderPage> {
                 children: [
                   ElevatedButton(
                     onPressed: rename,
-                    child: Icon(Icons.drive_file_rename_outline),
+                    child: const Icon(Icons.drive_file_rename_outline),
                   ),
                   ElevatedButton(
                     onPressed: delete,
-                    child: Icon(Icons.delete),
+                    child: const Icon(Icons.delete),
                   ),
                 ],
               ),
@@ -46,7 +46,7 @@ class _FolderPageState extends State<FolderPage> {
         ),
         ElevatedButton(
           onPressed: createFolder,
-          child: Text("Klasör Oluştur"),
+          child: const Text("Klasör Oluştur"),
         ),
       ],
     );
