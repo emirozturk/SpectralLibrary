@@ -56,7 +56,7 @@ class _UploadFilePageState extends State<UploadFilePage> {
             ],
           ),
         ),
-        filenames != null ? Text("Dosya Seçildi") : Text("Dosya Seçilmedi"),
+        filenames != null ? const Text("Dosya Seçildi") : const Text("Dosya Seçilmedi"),
         DropdownMenu<String>(
           initialSelection: categories.first,
           onSelected: (String? value) {

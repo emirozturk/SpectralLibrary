@@ -26,25 +26,12 @@ class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
 
   void login(context, username, password) async {
-    /*
     Response response = await UserController.getUser(username, password);
     if (response.isSuccess) {
       User user = response.body;
       await storage.write(key: 'email', value: mailController.text);
       await storage.write(
           key: 'password', value: Util.calculateMD5(passwordController.text));
-    */
-    var response = Response.success("");
-    if (true) {
-      var user = User(
-          email: "emirozturk@trakya.edu.tr",
-          company: "Trakya",
-          isConfirmed: true,
-          password: "123",
-          type: UserType.user,
-          folders: null,
-          token: null,
-          userId: 1);
       Navigator.push(
         context,
         MaterialPageRoute(

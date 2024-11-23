@@ -1,28 +1,20 @@
 from flask import Flask,request,jsonify
-from models.exam import Exam
-from models.user import User
-from models.user_with_token import UserWithToken
-from models.response import Response
-import json
 from flask_pymongo import PyMongo
 import jwt
 from functools import wraps
 from flask_cors import CORS
-from flask import render_template
-from datetime import datetime,timedelta,timezone
-from util import read_schedule,read_exams
-
-import os
+from Models.Response import Response
+from Models.User import User
 
 
 app = Flask(__name__)
 
 
-SECRET_KEY = "trakyacesecretkeywithemirozturk"
+SECRET_KEY = "spectralsecretkeywithemirozturk"
 
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/trakyacedb"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/spectraldb"
 mongo = PyMongo(app)
 CORS(app,resources={r"/*":{"origins":"*"}})  # This will allow all origins by default
 
@@ -45,22 +37,18 @@ def token_required(f):
     
     return decorated_function
 
-
-@app.route('/Sinavci')
-def sinavci_main_page():
-    start_time = datetime.now() - timedelta(minutes=15)
-    end_time = datetime.now() + timedelta(minutes=10)
-    exams = list(mongo.db.exams.find({
-            "exam_datetime": {
-                "$gte": start_time,
-                "$lte": end_time
-            }
-        }))
-    exam_names = [exam.get("name", "Unnamed Exam") for exam in exams]
-
-    return render_template('sinavci.html',exam_names=exam_names)
+@app.post("/api/Users/CheckLogin")
+def check_login():
+    email = request.json.get("email")
+    password = request.json.get("password")
+    foundMongoUser = mongo.db.users.find_one({"email":email,"password":password})
+    if foundMongoUser !=None:
+        foundUser = User.from_dict(foundMongoUser)
+        return jsonify(Response.success(foundUser)),200
+    return jsonify(Response.fail("User Not Found")),404
 
 
+"""
 
 @app.post('/api/Sinavci/CheckClassroom')
 def check_classroom():
@@ -348,3 +336,6 @@ def get_lecturer_names(current_user_id):
     response = jsonify(Response(True,list_of_lecturers,"").to_dict())
     response.headers.add("Access-Control-Allow-Origin","*")
     return response
+
+
+"""
