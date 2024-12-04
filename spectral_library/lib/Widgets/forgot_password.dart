@@ -19,7 +19,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     if (result.isSuccess) {
       Util.showInfoDialog(context: context, content: result.body);
     } else {
-      Util.showErrorDialog(context: context, content: result.message);
+      Util.showErrorDialog(context: context, content: result.message!);
     }
   }
 

@@ -3,9 +3,9 @@ class Data:
         self.x = x
         self.y = y
 
-    def to_dict(self):
+    def to_map(self):
         return {"x": self.x, "y": self.y}
     
     @classmethod
-    def from_dict(cls, data):
+    def from_map(cls, data):
         return cls(x=data["x"], y=data["y"])

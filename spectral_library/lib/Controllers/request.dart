@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 
 class Request {
   static String address = "http://127.0.0.1:5000/api";
-  
+
   static Future<Response> postWithoutAuth(String url, var body) async {
     try {
       final response = await http.post(Uri.parse('$address/$url'),
@@ -62,6 +62,24 @@ class Request {
   static Future<Response> put(User user, String url, var body) async {
     try {
       final response = await http.put(Uri.parse('$address/$url'),
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': 'Bearer ${user.token}'
+          },
+          body: jsonEncode(body.toMap()));
+      return Response.fromMap(jsonDecode(response.body));
+    } catch (e) {
+      if (e is SocketException) {
+        return Response.fail(e.message.toString());
+      } else {
+        return Response.fail(e.toString());
+      }
+    }
+  }
+
+  static Future<Response> delete(User user, String url, var body) async {
+    try {
+      final response = await http.delete(Uri.parse('$address/$url'),
           headers: {
             "Content-Type": "application/json",
             'Authorization': 'Bearer ${user.token}'

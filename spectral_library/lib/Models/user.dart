@@ -20,4 +20,33 @@ class User {
     this.token,
     this.folders,
   });
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'email': email,
+      'password': password,
+      'type': type.toStringValue(), // Assuming UserType is an enum
+      'isConfirmed': isConfirmed,
+      'company': company,
+      'token': token,
+      'folders': folders?.map((folder) => folder.toMap()).toList(),
+    };
+  }
+
+  /// Creates a User object from a Map
+  factory User.fromMap(Map<String, dynamic> map) {
+    return User(
+      userId: map['userId'] as int?,
+      email: map['email'] as String,
+      password: map['password'] as String,
+      type: UserTypeExtension.fromString(map['type']), // Assuming UserType is an enum
+      isConfirmed: map['isConfirmed'] as bool,
+      company: map['company'] as String,
+      token: map['token'] as String?,
+      folders: (map['folders'] as List<dynamic>?)
+          ?.map(
+              (folderMap) => Folder.fromMap(folderMap as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }

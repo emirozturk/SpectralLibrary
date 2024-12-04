@@ -8,7 +8,7 @@ class Response:
         self.message = message
 
     @classmethod
-    def from_dict(cls, map: dict):
+    def from_map(cls, map: dict):
         return cls(
             is_success=map.get("isSuccess"),
             body=map.get("body"),
@@ -23,7 +23,7 @@ class Response:
     def fail(cls, message: str):
         return cls(is_success=False, body=None, message=message)
 
-    def to_dict(self):
+    def to_map(self):
         return {
             "isSuccess": self.is_success,
             "body": self.body,

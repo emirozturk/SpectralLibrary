@@ -3,9 +3,10 @@ from flask_pymongo import PyMongo
 import jwt
 from functools import wraps
 from flask_cors import CORS
+from Models import Folder
 from Models.Response import Response
 from Models.User import User
-
+from datetime import datetime,timedelta
 
 app = Flask(__name__)
 
@@ -43,10 +44,68 @@ def check_login():
     password = request.json.get("password")
     foundMongoUser = mongo.db.users.find_one({"email":email,"password":password})
     if foundMongoUser !=None:
-        foundUser = User.from_dict(foundMongoUser)
-        return jsonify(Response.success(foundUser)),200
-    return jsonify(Response.fail("User Not Found")),404
+        foundUser = User.from_map(foundMongoUser)
+        token = jwt.encode({
+            'userId': foundMongoUser['userId'],
+            'exp': datetime.now() + timedelta(hours=1)
+        }, SECRET_KEY, algorithm="HS256")
+        foundUser.token = token
+        return jsonify(Response.success(foundUser.to_map()).to_map()),200
+    else:
+        response = jsonify(Response(False, {}, "User Not Found").to_map())
+        response.headers.add("Access-Control-Allow-Origin","*")
+        return response
 
+
+@app.post("/api/Users/AddUser")
+def add_user():
+        data = request.json
+        
+        # Extract user details from the request
+        user = User.from_map(data)
+        
+        # Check if the user already exists
+        existing_user = mongo.db.users.find_one({"userId": user.user_id})
+        if existing_user:
+            return jsonify(Response(False, {}, "User already exists").to_dict()), 400
+
+        # Hash password (not implemented in this example, but should be done in production)
+        # user.password = hash_password(user.password)
+
+        # Save new user to MongoDB
+        mongo.db.users.insert_one(user.to_map())
+
+        return jsonify(Response(True, user.to_map(), "User successfully created").to_dict()), 201
+
+
+@app.put("/api/Users/")
+@token_required
+def update_user(userId):
+        data = request.json
+        user = User.from_map(data)        
+        found_user_m = mongo.db.users.find_one({"userId": user.user_id})
+        if not found_user_m:
+            return jsonify(Response(False, {}, "User Not Found").to_dict()), 400
+
+        mongo.db.users.replace_one({"userId": user.user_id}, user.to_map())
+
+        return jsonify(Response(True, user.to_map(), "User successfully updated").to_map()), 201
+
+
+@app.post("/api/Folders/")
+@token_required
+def add_folder(userId):
+    pass
+
+@app.put("/api/Folders/")
+@token_required
+def update_folder(userId):
+    pass
+
+@app.delete("/api/Folders/")
+@token_required
+def delete_folder(userId):
+    pass
 
 """
 
@@ -106,28 +165,6 @@ def sinavci_add_exams(current_user_id):
     response.headers.add("Access-Control-Allow-Origin","*")
     return response
 
-
-@app.post("/api/Users/AddUser")
-@token_required
-def add_user(current_user_id):
-    if current_user_id=="1060203022":
-        data = request.json
-        
-        # Extract user details from the request
-        user = User.from_map(data)
-        
-        # Check if the user already exists
-        existing_user = mongo.db.users.find_one({"userId": user.user_id})
-        if existing_user:
-            return jsonify(Response(False, {}, "User already exists").to_dict()), 400
-
-        # Hash password (not implemented in this example, but should be done in production)
-        # user.password = hash_password(user.password)
-
-        # Save new user to MongoDB
-        mongo.db.users.insert_one(user.to_map())
-
-        return jsonify(Response(True, user.to_map(), "User successfully created").to_dict()), 201
 
 
 @app.post("/api/Users/AddResult")

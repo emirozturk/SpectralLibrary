@@ -13,17 +13,17 @@ class Folder:
         self.folder_name = folder_name
         self.files = files
 
-    def to_dict(self):
+    def to_map(self):
         return {
-            "folder_id": self.folder_id,
-            "folder_name": self.folder_name,
-            "files": [file.to_dict() for file in self.files],
+            "folderId": self.folder_id,
+            "folderName": self.folder_name,
+            "files": [file.to_map() for file in self.files],
         }
         
     @classmethod
-    def from_dict(cls, data):
+    def from_map(cls, data):
         return cls(
-            folder_id=data.get("folder_id"),
-            folder_name=data["folder_name"],
-            files=[SpectFile.from_dict(file) for file in data["files"]],
+            folder_id=data.get("folderId"),
+            folder_name=data["folderName"],
+            files=[SpectFile.from_map(file) for file in (data["files"] or [])],
         )

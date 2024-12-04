@@ -21,7 +21,7 @@ class SpectFile:
         self.data_points = data_points
         self.shared_with = shared_with or []
 
-    def to_dict(self):
+    def to_map(self):
         return {
             "file_id": self.file_id,
             "filename": self.filename,
@@ -32,7 +32,7 @@ class SpectFile:
             "shared_with": self.shared_with,
         }
     @classmethod
-    def from_dict(cls, data):
+    def from_map(cls, data):
         return cls(
             file_id=data.get("file_id"),
             filename=data["filename"],

@@ -1,5 +1,7 @@
+
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:spectral_library/Models/spect_file.dart';
 import 'package:spectral_library/Models/user.dart';
 
 class UserMainpage extends StatelessWidget {
@@ -8,7 +10,7 @@ class UserMainpage extends StatelessWidget {
   var categories;
   var subcategories;
   var folders;
-  var files;
+  List<SpectFile> files = [];
   var selectedCategory;
   var selectedSubcategory;
   var selectedFolder;
@@ -50,8 +52,9 @@ class UserMainpage extends StatelessWidget {
             }
             return null;
           },
-          items: files ?? [],
-          selectedItems: selectedFiles,
+          items: (filter, s) =>
+              files.isEmpty ? [] : files.map((x) => x.filename).toList(),
+          selectedItems: selectedFiles ?? [],
           onChanged: (value) => selectedFiles = value,
         ),
       ],

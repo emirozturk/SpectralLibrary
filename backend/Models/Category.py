@@ -13,7 +13,7 @@ class Category:
         self.category_name_en = category_name_en
         self.sub_categories = sub_categories or []
 
-    def to_dict(self):
+    def to_map(self):
         return {
             "category_id": self.category_id,
             "category_name_tr": self.category_name_tr,

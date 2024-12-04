@@ -29,27 +29,27 @@ class User:
         self.token = token
         self.folders = folders or []
 
-    def to_dict(self):
+    def to_map(self):
         return {
-            "user_id": self.user_id,
+            "userId": self.user_id,
             "email": self.email,
             "password": self.password,
             "type": self.type,
-            "is_confirmed": self.is_confirmed,
+            "isConfirmed": self.is_confirmed,
             "company": self.company,
             "token": self.token,
-            "folders": [folder.to_dict() for folder in self.folders],
+            "folders": [folder.to_map() for folder in self.folders],
         }
     
     @classmethod
-    def from_dict(cls, data):
+    def from_map(cls, data):
         return cls(
-            user_id=data.get("user_id"),
+            user_id=data.get("userId"),
             email=data["email"],
             password=data["password"],
             type_=data["type"],
-            is_confirmed=data["is_confirmed"],
+            is_confirmed=data["isConfirmed"],
             company=data["company"],
             token=data.get("token"),
-            folders=[Folder.from_dict(folder) for folder in data.get("folders", [])],
+            folders=[Folder.from_map(folder) for folder in data.get("folders", [])],
         )

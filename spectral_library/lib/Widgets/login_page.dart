@@ -28,10 +28,9 @@ class _LoginPageState extends State<LoginPage> {
   void login(context, username, password) async {
     Response response = await UserController.getUser(username, password);
     if (response.isSuccess) {
-      User user = response.body;
+      User user = User.fromMap(response.body);
       await storage.write(key: 'email', value: mailController.text);
-      await storage.write(
-          key: 'password', value: Util.calculateMD5(passwordController.text));
+      await storage.write(key: 'password', value: password);
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -155,8 +154,8 @@ class _LoginPageState extends State<LoginPage> {
               ElevatedButton(
                 onPressed: () {
                   if (formKey.currentState!.validate()) {
-                    login(
-                        context, mailController.text, passwordController.text);
+                    login(context, mailController.text,
+                        Util.calculateMD5(passwordController.text));
                   }
                 },
                 style: Theme.of(context).elevatedButtonTheme.style,
