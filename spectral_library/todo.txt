@@ -1,0 +1,2 @@
+Dosya yüklendikten sonra temizlenmeli
+Kat2 seçildiğinde error veriyor bakılacak

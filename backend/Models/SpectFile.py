@@ -23,22 +23,22 @@ class SpectFile:
 
     def to_map(self):
         return {
-            "file_id": self.file_id,
+            "fileId": self.file_id,
             "filename": self.filename,
             "category": self.category,
             "description": self.description,
-            "is_public": self.is_public,
-            "data_points": [data.to_dict() for data in self.data_points],
-            "shared_with": self.shared_with,
+            "isPublic": self.is_public,
+            "dataPoints": [data.to_map() for data in self.data_points],
+            "sharedWith": self.shared_with,
         }
     @classmethod
     def from_map(cls, data):
         return cls(
-            file_id=data.get("file_id"),
+            file_id=data.get("fileId"),
             filename=data["filename"],
             category=data["category"],
             description=data.get("description"),
-            is_public=data["is_public"],
-            data_points=[Data.from_dict(dp) for dp in data["data_points"]],
-            shared_with=data.get("shared_with", []),
+            is_public=data["isPublic"],
+            data_points=[Data.from_map(dp) for dp in data["dataPoints"]],
+            shared_with=data.get("sharedWith", []),
         )

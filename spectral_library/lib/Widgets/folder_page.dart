@@ -93,35 +93,72 @@ class _FolderPageState extends State<FolderPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.builder(
-            itemCount: folders!.length, // Specify itemCount
-            itemBuilder: (context, index) => ListTile(
-              title: Text(folders![index].folderName),
-              trailing: Row(
-                mainAxisSize:
-                    MainAxisSize.min, // Ensures Row takes minimal width
-                children: [
-                  ElevatedButton(
-                    onPressed: () => rename(index),
-                    child: const Icon(Icons.drive_file_rename_outline),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: folders!.length, // Specify itemCount
+              itemBuilder: (context, index) => Card(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                elevation: 4,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                    horizontal: 16.0,
                   ),
-                  ElevatedButton(
-                    onPressed: () => delete(index),
-                    child: const Icon(Icons.delete),
+                  title: Text(
+                    folders![index].folderName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ],
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => rename(index),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.all(8.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                        ),
+                        child: const Icon(Icons.drive_file_rename_outline),
+                      ),
+                      const SizedBox(width: 8), // Add spacing between buttons
+                      ElevatedButton(
+                        onPressed: () => delete(index),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.all(8.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          backgroundColor: Colors.red, // Red for delete button
+                        ),
+                        child: const Icon(Icons.delete),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-        ElevatedButton(
-          onPressed: createFolder,
-          child: const Text("Klasör Oluştur"),
-        ),
-      ],
+          const SizedBox(height: 16), // Space between list and button
+          ElevatedButton.icon(
+            onPressed: createFolder,
+            icon: const Icon(Icons.create_new_folder),
+            label: const Text("Klasör Oluştur"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

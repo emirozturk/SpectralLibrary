@@ -3,7 +3,14 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:spectral_library/Controllers/category_controller.dart';
+import 'package:spectral_library/Controllers/user_controller.dart';
+import 'package:spectral_library/Models/category.dart';
+import 'package:spectral_library/Models/data.dart';
+import 'package:spectral_library/Models/folder.dart';
+import 'package:spectral_library/Models/spect_file.dart';
 import 'package:spectral_library/Models/user.dart';
+import 'package:spectral_library/util.dart';
 
 class UploadFilePage extends StatefulWidget {
   User user;
@@ -15,13 +22,15 @@ class UploadFilePage extends StatefulWidget {
 }
 
 class _UploadFilePageState extends State<UploadFilePage> {
+  bool firstLoad = true;
+
   var filenames;
 
-  var categories = [""];
+  List<Category> categories = [];
 
-  var subcategories = [""];
+  List<Category> subcategories = [];
 
-  var folders = [""];
+  List<Folder> folders = [];
 
   var selectedCategory;
 
@@ -29,80 +38,290 @@ class _UploadFilePageState extends State<UploadFilePage> {
 
   var selectedFolder;
 
-  void selectFiles() async {
+  List<File> selectedFiles = [];
+  List<TextEditingController> desiredFilenamesControllers = [];
+  List<TextEditingController> descriptionControllers = [];
+
+  Future<void> selectFiles() async {
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(allowMultiple: true);
 
     if (result != null) {
-      List<File> files = result.paths.map((path) => File(path!)).toList();
-      filenames = files.map((x) => basename(x.path)).toList();
+      // Convert paths to File objects and store them in the selectedFiles list
+      setState(() {
+        selectedFiles = result.paths.map((path) => File(path!)).toList();
+        filenames = selectedFiles.map((file) => basename(file.path)).toList();
+      });
     } else {
       // User canceled the picker
     }
   }
 
-  void uploadFiles() async {}
+  Future<SpectFile> parseFileToSpectFiles(
+      File file, String filename, String description) async {
+    List<String> lines = await file.readAsLines();
+
+    List<Data> datapoints =
+        lines.where((line) => line.trim().isNotEmpty).map((line) {
+      List<String> values = line.split(",");
+      return Data(
+        x: double.parse(values[0]),
+        y: double.parse(values[1]),
+      );
+    }).toList();
+
+    // Create a single SpectFile for this file
+    SpectFile spectFile = SpectFile(
+      filename: filename,
+      category: selectedFolder!,
+      isPublic: false,
+      dataPoints: datapoints,
+      description: description,
+    );
+
+    return spectFile;
+  }
+
+  Future<void> uploadFiles(context) async {
+    if (selectedFolder == null) {
+      Util.showErrorSnackBar(context, "Please select a folder");
+      return;
+    }
+
+    Folder? folder = widget.user.folders
+        ?.firstWhere((folder) => folder.folderName == selectedFolder);
+
+    for (int i = 0; i < selectedFiles.length; i++) {
+      File file = selectedFiles[i];
+      String filename = desiredFilenamesControllers[i].text;
+      String description = descriptionControllers[i].text;
+
+      SpectFile spectFile =
+          await parseFileToSpectFiles(file, filename, description);
+
+      folder!.files!.add(spectFile);
+    }
+
+    await UserController.updateUser(widget.user);
+  }
+
+  void fetchCategories(context) async {
+    var response = await CategoryController.getCategories(widget.user);
+    if (response.isSuccess) {
+      setState(() {
+        categories = (response.body as List<dynamic>)
+            .map((x) => Category.fromMap(x as Map<String, dynamic>))
+            .toList();
+      });
+    } else {
+      Util.showErrorSnackBar(context, response.message);
+    }
+  }
+
+  void fillSubCategories(name) {
+    subcategories =
+        categories.where((x) => x.categoryNameTr == name).first.subCategories ??
+            [];
+  }
+
+  void fillFolders() {
+    folders = widget.user.folders ?? [];
+  }
+
+  void fetch(context) {
+    fetchCategories(context);
+    fillFolders();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ElevatedButton(
-          onPressed: selectFiles,
-          child: const Row(
-            children: [
-              Icon(Icons.file_copy),
-              Text("Dosya Seç"),
-            ],
+    if (firstLoad) {
+      firstLoad = false;
+      fetch(context);
+    }
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () async {
+                await selectFiles();
+                setState(() {
+                  for (var file in selectedFiles) {
+                    desiredFilenamesControllers.add(TextEditingController());
+                    descriptionControllers.add(TextEditingController());
+                  }
+                });
+              },
+              icon: const Icon(Icons.file_copy),
+              label: const Text("Select Files"),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            filenames != null
+                ? const Text("Files Selected",
+                    style: TextStyle(fontWeight: FontWeight.bold))
+                : const Text("No Files Selected",
+                    style: TextStyle(fontStyle: FontStyle.italic)),
+            const SizedBox(height: 16),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: selectedFiles.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Original Filename: ${filenames[index]}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: desiredFilenamesControllers[index],
+                          decoration: const InputDecoration(
+                            labelText: "Desired Filename",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: descriptionControllers[index],
+                          maxLines: 2,
+                          decoration: const InputDecoration(
+                            labelText: "Description",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              setState(() {
+                                filenames.removeAt(index);
+                                selectedFiles.removeAt(index);
+                                desiredFilenamesControllers.removeAt(index);
+                                descriptionControllers.removeAt(index);
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownSection(
+              label: "Category",
+              items: categories.map((x) => x.categoryNameTr).toList(),
+              selectedItem: selectedCategory,
+              onChanged: (value) {
+                setState(() {
+                  selectedCategory = value;
+                  fillSubCategories(value);
+                });
+              },
+            ),
+            DropdownSection(
+              label: "Subcategory",
+              items: subcategories.map((x) => x.categoryNameTr).toList(),
+              selectedItem: selectedSubCategory,
+              onChanged: (value) {
+                setState(() {
+                  selectedSubCategory = value;
+                });
+              },
+            ),
+            DropdownSection(
+              label: "Folder",
+              items: folders.map((x) => x.folderName).toList(),
+              selectedItem: selectedFolder,
+              onChanged: (value) {
+                setState(() {
+                  selectedFolder = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () async {
+                await uploadFiles(context);
+                Util.showErrorSnackBar(context, "Files uploaded successfully!");
+              },
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload"),
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DropdownSection extends StatelessWidget {
+  final String label;
+  final List<String> items;
+  final String? selectedItem;
+  final void Function(String?) onChanged;
+
+  const DropdownSection({
+    required this.label,
+    required this.items,
+    required this.selectedItem,
+    required this.onChanged,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: selectedItem,
+            items: items.map((item) {
+              return DropdownMenuItem(
+                value: item,
+                child: Text(item),
+              );
+            }).toList(),
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+              contentPadding:
+                  EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            ),
           ),
-        ),
-        filenames != null ? const Text("Dosya Seçildi") : const Text("Dosya Seçilmedi"),
-        DropdownMenu<String>(
-          initialSelection: categories.first,
-          onSelected: (String? value) {
-            setState(() {
-              selectedCategory = value!;
-            });
-          },
-          dropdownMenuEntries:
-              categories.map<DropdownMenuEntry<String>>((String value) {
-            return DropdownMenuEntry<String>(value: value, label: value);
-          }).toList(),
-        ),
-        DropdownMenu<String>(
-          initialSelection: categories.first,
-          onSelected: (String? value) {
-            setState(() {
-              selectedSubCategory = value!;
-            });
-          },
-          dropdownMenuEntries:
-              subcategories.map<DropdownMenuEntry<String>>((String value) {
-            return DropdownMenuEntry<String>(value: value, label: value);
-          }).toList(),
-        ),
-        DropdownMenu<String>(
-          initialSelection: categories.first,
-          onSelected: (String? value) {
-            setState(() {
-              selectedFolder = value!;
-            });
-          },
-          dropdownMenuEntries:
-              folders.map<DropdownMenuEntry<String>>((String value) {
-            return DropdownMenuEntry<String>(value: value, label: value);
-          }).toList(),
-        ),
-        ElevatedButton(
-          onPressed: uploadFiles,
-          child: const Row(
-            children: [
-              Icon(Icons.upload_file),
-              Text("Yükle"),
-            ],
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
