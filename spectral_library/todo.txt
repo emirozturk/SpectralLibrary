@@ -1,2 +1,6 @@
-Dosya yüklendikten sonra temizlenmeli
-Kat2 seçildiğinde error veriyor bakılacak
+Dosya yüklendikten sonra fileupload temizlenmeli
+Boş dosya geçilememeli
+register page debug edilecek
+forgot password debug edilecek
+Filtreleme çalışmıyor
+Grafik çizdirme duruyor
