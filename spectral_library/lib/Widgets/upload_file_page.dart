@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart';
 import 'package:spectral_library/Controllers/category_controller.dart';
 import 'package:spectral_library/Controllers/user_controller.dart';
 import 'package:spectral_library/Models/category.dart';
@@ -38,7 +37,7 @@ class _UploadFilePageState extends State<UploadFilePage> {
 
   var selectedFolder;
 
-  List<File> selectedFiles = [];
+  List<Uint8List> selectedFiles = [];
   List<TextEditingController> desiredFilenamesControllers = [];
   List<TextEditingController> descriptionControllers = [];
 
@@ -47,10 +46,10 @@ class _UploadFilePageState extends State<UploadFilePage> {
         await FilePicker.platform.pickFiles(allowMultiple: true);
 
     if (result != null) {
-      // Convert paths to File objects and store them in the selectedFiles list
       setState(() {
-        selectedFiles = result.paths.map((path) => File(path!)).toList();
-        filenames = selectedFiles.map((file) => basename(file.path)).toList();
+        // Use bytes for web compatibility
+        selectedFiles = result.files.map((file) => file.bytes!).toList();
+        filenames = result.files.map((file) => file.name).toList();
       });
     } else {
       // User canceled the picker
@@ -58,8 +57,11 @@ class _UploadFilePageState extends State<UploadFilePage> {
   }
 
   Future<SpectFile> parseFileToSpectFiles(
-      File file, String filename, String description) async {
-    List<String> lines = await file.readAsLines();
+      Uint8List fileBytes, String filename, String description) async {
+    // Convert bytes to a string
+    String fileContent = String.fromCharCodes(fileBytes);
+
+    List<String> lines = fileContent.split('\n');
 
     List<Data> datapoints =
         lines.where((line) => line.trim().isNotEmpty).map((line) {
@@ -92,17 +94,26 @@ class _UploadFilePageState extends State<UploadFilePage> {
         ?.firstWhere((folder) => folder.folderName == selectedFolder);
 
     for (int i = 0; i < selectedFiles.length; i++) {
-      File file = selectedFiles[i];
       String filename = desiredFilenamesControllers[i].text;
       String description = descriptionControllers[i].text;
 
+      if (filename.isEmpty || description.isEmpty) {
+        Util.showErrorSnackBar(
+            context, "Please provide filenames and descriptions for all files");
+        return;
+      }
+
       SpectFile spectFile =
-          await parseFileToSpectFiles(file, filename, description);
+          await parseFileToSpectFiles(selectedFiles[i], filename, description);
 
       folder!.files!.add(spectFile);
     }
 
     await UserController.updateUser(widget.user);
+
+    // Clear all fields after upload
+    clearForm();
+    Util.showErrorSnackBar(context, "Files uploaded successfully!");
   }
 
   void fetchCategories(context) async {
@@ -131,6 +142,18 @@ class _UploadFilePageState extends State<UploadFilePage> {
   void fetch(context) {
     fetchCategories(context);
     fillFolders();
+  }
+
+  void clearForm() {
+    setState(() {
+      selectedCategory = null;
+      selectedSubCategory = null;
+      selectedFolder = null;
+      filenames = null;
+      selectedFiles.clear();
+      desiredFilenamesControllers.clear();
+      descriptionControllers.clear();
+    });
   }
 
   @override
@@ -263,7 +286,6 @@ class _UploadFilePageState extends State<UploadFilePage> {
             ElevatedButton.icon(
               onPressed: () async {
                 await uploadFiles(context);
-                Util.showErrorSnackBar(context, "Files uploaded successfully!");
               },
               icon: const Icon(Icons.upload_file),
               label: const Text("Upload"),
@@ -293,8 +315,8 @@ class DropdownSection extends StatelessWidget {
     required this.items,
     required this.selectedItem,
     required this.onChanged,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

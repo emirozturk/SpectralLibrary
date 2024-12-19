@@ -25,8 +25,8 @@ class _LoginPageState extends State<LoginPage> {
 
   final formKey = GlobalKey<FormState>();
 
-  void login(context, username, password) async {
-    Response response = await UserController.getUser(username, password);
+  void login(context, email, password) async {
+    Response response = await UserController.getUser(email, password);
     if (response.isSuccess) {
       User user = User.fromMap(response.body);
       await storage.write(key: 'email', value: mailController.text);
@@ -45,10 +45,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> autoLogin() async {
-    String? username = await storage.read(key: 'email');
+    String? email = await storage.read(key: 'email');
     String? password = await storage.read(key: 'password');
-    if (username != null && password != null) {
-      login(context, username, password);
+    if (email != "" && password != "") {
+      login(context, email, password);
     }
   }
 

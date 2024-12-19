@@ -62,10 +62,8 @@ def check_login():
 def add_user():
         data = request.json
         
-        # Extract user details from the request
         user = User.from_map(data)
         
-        # Check if the user already exists
         existing_user = mongo.db.users.find_one({"userId": user.user_id})
         if existing_user:
             return jsonify(Response(False, {}, "User already exists").to_map()), 400
@@ -87,6 +85,63 @@ def update_user(userId):
         mongo.db.users.replace_one({"userId": user.user_id}, user.to_map())
 
         return jsonify(Response(True, user.to_map(), "User successfully updated").to_map()), 201
+
+
+@app.post("/api/Users/ResetPassword")
+def reset_password():
+        data = request.json
+        found_user_m = mongo.db.users.find_one({"email": data})
+        if not found_user_m:
+            return jsonify(Response(False, {}, "User Not Found").to_map()), 400
+        user = User.from_map(found_user_m)
+        user.password = "202cb962ac59075b964b07152d234b70"
+        mongo.db.users.replace_one({"userId": user.user_id}, user.to_map())
+
+        return jsonify(Response(True, user.to_map(), "Password has been reset").to_map()), 201
+    
+    
+@app.get("/api/Users/")
+@token_required
+def get_users(userId):
+    users_m = mongo.db.users.find()
+    users = [User.from_map(x) for x in users_m]
+    response = jsonify(Response(True,[x.to_map() for x in users],"").to_map()) 
+    return response
+
+    
+@app.get("/api/SharedFiles")
+@token_required
+def get_sharedFiles(userId):
+    found_user_m = mongo.db.users.find_one({"userId": user.user_id})
+    found_user = User.from_map(found_user_m)
+     
+    file_list = []
+    all_users_m = mongo.db.users.find()
+    all_users = [User.from_map(x) for x in all_users_m]
+    for user in all_users:
+        for folder in user.folders:
+            for file in folder.files:
+                if found_user.email in file.shared_with:
+                    file_list.append(file)
+      
+    response = jsonify(Response(True,[file.to_map() for file in file_list],"").to_map()) 
+    return response
+
+
+@app.get("/api/PublicFiles")
+@token_required
+def get_publicFiles(userId):
+    file_list = []
+    all_users_m = mongo.db.users.find()
+    all_users = [User.from_map(x) for x in all_users_m]
+    for user in all_users:
+        for folder in user.folders:
+            for file in folder.files:
+                if file.is_public:
+                    file_list.append(file)
+      
+    response = jsonify(Response(True,[file.to_map() for file in file_list],"").to_map()) 
+    return response
 
 
 @app.get("/api/Categories")
@@ -127,6 +182,73 @@ def update_category():
 
         return jsonify(Response(True, category.to_map(), "Category successfully updated").to_map()), 201
 
+
+@app.delete("/api/Categories/")
+@token_required
+def delete_category():
+        data = request.json        
+        category = Category.from_map(data)        
+        found_category_m = mongo.db.users.find_one({"categoryNameTr": category.category_name_tr})
+        if not found_category_m:
+            return jsonify(Response(False, {}, "Category Not Found").to_map()), 400
+
+        mongo.db.categories.remove({"categoryNameTr":category.category_name_tr}, category.to_map())
+
+        return jsonify(Response(True, category.to_map(), "Category successfully updated").to_map()), 201
+
+
+@app.get("/api/Admin/UserCount")
+@token_required
+def get_user_count(userId):
+    users_m = mongo.db.users.find()
+    users = [User.from_map(x) for x in users_m]
+    response = jsonify(Response(True,len(users),"").to_map()) 
+    return response
+
+
+@app.get("/api/Admin/FileCount")
+@token_required
+def get_file_count(userId):
+    users_m = mongo.db.users.find()
+    users = [User.from_map(x) for x in users_m]
+    fileCount = 0
+    for user in users:
+        for folder in user.folders:
+            fileCount += len(folder.files)
+            
+    response = jsonify(Response(True,fileCount,"").to_map()) 
+    return response
+
+
+@app.get("/api/Admin/FolderCount")
+@token_required
+def get_folder_count(userId):
+    users_m = mongo.db.users.find()
+    users = [User.from_map(x) for x in users_m]
+    folderCount = 0
+    for user in users:
+        folderCount += len(user.folders)
+            
+    response = jsonify(Response(True,folderCount,"").to_map()) 
+    return response
+
+
+@app.get("/api/Admin/FileCategoryRatios")
+@token_required
+def get_filecategory_ratios(userId):
+    users_m = mongo.db.users.find()
+    users = [User.from_map(x) for x in users_m]
+    category_ratios={}
+    for user in users:
+        for folder in user.folders:
+            for file in folder.files:
+                if file.category in category_ratios:
+                    category_ratios[file.category]+=1
+                else:
+                    category_ratios[file.category]=1
+
+    response = jsonify(Response(True,category_ratios,"").to_map()) 
+    return response
 """
 
 @app.post('/api/Sinavci/CheckClassroom')

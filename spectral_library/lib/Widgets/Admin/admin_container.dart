@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spectral_library/Models/user.dart';
 import 'package:spectral_library/Widgets/Admin/admin_category_management_page.dart';
-import 'package:spectral_library/Widgets/Admin/admin_file_management_page.dart';
-import 'package:spectral_library/Widgets/Admin/admin_folder_management_page.dart';
 import 'package:spectral_library/Widgets/Admin/admin_mainpage.dart';
 import 'package:spectral_library/Widgets/Admin/admin_user_management_page.dart';
 
@@ -17,10 +15,8 @@ class _AdminContainerState extends State<AdminContainer> {
   var currentIndex = 0;
   List<Widget> pageListFunc() => [
         AdminMainpage(widget.user),
-        AdminFolderManagementPage(widget.user),
-        AdminCategoryManagementPage(widget.user),
         AdminUserManagementPage(widget.user),
-        AdminFileManagementPage(widget.user)
+        AdminCategoryManagementPage(widget.user),
       ];
 
   @override
@@ -36,10 +32,10 @@ class _AdminContainerState extends State<AdminContainer> {
       body: pageList[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Anasayfa"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "MainPage"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Users"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.home), label: "Kullanıcılar"),
-          BottomNavigationBarItem(icon: Icon(Icons.message), label: "Mesajlar"),
+              icon: Icon(Icons.category), label: "Categories"),
         ],
         currentIndex: currentIndex,
         onTap: (index) {

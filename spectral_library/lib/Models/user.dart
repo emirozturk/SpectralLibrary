@@ -1,4 +1,5 @@
 import 'package:spectral_library/Models/folder.dart';
+import 'package:spectral_library/Models/spect_file.dart';
 import 'package:spectral_library/Models/user_type.dart';
 
 class User {
@@ -10,6 +11,8 @@ class User {
   String company;
   String? token;
   List<Folder>? folders;
+  List<SpectFile>? sharedFiles;
+  List<SpectFile>? publicFiles;
   User({
     this.userId,
     required this.email,
@@ -19,6 +22,8 @@ class User {
     required this.company,
     this.token,
     this.folders,
+    this.sharedFiles,
+    this.publicFiles,
   });
   Map<String, dynamic> toMap() {
     return {
@@ -39,13 +44,20 @@ class User {
       userId: map['userId'] as int?,
       email: map['email'] as String,
       password: map['password'] as String,
-      type: UserTypeExtension.fromString(map['type']), // Assuming UserType is an enum
+      type: UserTypeExtension.fromString(
+          map['type']), // Assuming UserType is an enum
       isConfirmed: map['isConfirmed'] as bool,
       company: map['company'] as String,
       token: map['token'] as String?,
       folders: (map['folders'] as List<dynamic>?)
           ?.map(
               (folderMap) => Folder.fromMap(folderMap as Map<String, dynamic>))
+          .toList(),
+      sharedFiles: (map['sharedFiles'] as List<dynamic>?)
+          ?.map((x) => SpectFile.fromMap(x))
+          .toList(),
+      publicFiles: (map['publicFiles'] as List<dynamic>?)
+          ?.map((x) => SpectFile.fromMap(x))
           .toList(),
     );
   }

@@ -41,12 +41,12 @@ class _UserContainerState extends State<UserContainer> {
       body: pageList[currentIndex],
       bottomNavigationBar: NavigationBar(
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: "Anasayfa"),
+          NavigationDestination(icon: Icon(Icons.home), label: "Mainpage"),
           NavigationDestination(
-              icon: Icon(Icons.upload_file), label: "Dosya yükle"),
+              icon: Icon(Icons.upload_file), label: "Upload File"),
           NavigationDestination(
             icon: Icon(Icons.folder),
-            label: "Klasörler",
+            label: "Folders",
           ),
         ],
         selectedIndex: currentIndex,

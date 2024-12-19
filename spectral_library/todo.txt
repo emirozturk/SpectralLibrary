@@ -1,6 +1,8 @@
 Dosya yüklendikten sonra fileupload temizlenmeli
 Boş dosya geçilememeli
 register page debug edilecek
+    USer kaydında user isactive false olmalı mail
 forgot password debug edilecek
+    Reset ediyor mail yok
 Filtreleme çalışmıyor
-Grafik çizdirme duruyor
+Grafik çizdirme zoom in

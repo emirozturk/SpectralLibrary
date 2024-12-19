@@ -43,7 +43,11 @@ dependencies:
   file_picker: ^8.1.4
   path: ^1.9.0
   dropdown_search: ^6.0.1
-
+  fl_chart:
+  screenshot:
+  path_provider:
+  graphic: ^2.5.0
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
