@@ -12,8 +12,8 @@ class CategoryController {
     return await Request.post(user, "Categories", newCategory);
   }
 
-  static updateCategory(User user, Category category) async {
-    return await Request.put(user, "Categories", category);
+  static updateCategory(User user, Category category,String oldCNTr,String oldCNEn) async {
+    return await Request.put(user, "Categories/$oldCNTr/$oldCNEn", category);
   }
 
   static deleteCategory(User user, Category category) async {

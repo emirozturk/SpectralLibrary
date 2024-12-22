@@ -3,10 +3,11 @@ import 'package:spectral_library/Controllers/user_controller.dart';
 import 'package:spectral_library/Models/folder.dart';
 import 'package:spectral_library/Models/user.dart';
 import 'package:spectral_library/util.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class FolderPage extends StatefulWidget {
-  User user;
-  FolderPage(this.user, {super.key});
+  final User user;
+  const FolderPage(this.user, {super.key});
 
   @override
   State<FolderPage> createState() => _FolderPageState();
@@ -22,16 +23,16 @@ class _FolderPageState extends State<FolderPage> {
   }
 
   void updateUser() async {
-    var response = await UserController.updateUser(widget.user);
+    final response = await UserController.updateUser(widget.user, widget.user);
     if (response.isSuccess) {
-      Util.showErrorSnackBar(context, "Success");
+      Util.showInfoDialog(context: context, content: response.message!);
     } else {
-      Util.showErrorSnackBar(context, response.message);
+      Util.showErrorDialog(context: context, content: response.message!);
     }
     setState(() {});
   }
 
-  void rename(index) async {
+  Future<void> rename(int index) async {
     final inputText = await showInputDialog(context);
     if (inputText != null) {
       widget.user.folders![index].folderName = inputText;
@@ -39,15 +40,16 @@ class _FolderPageState extends State<FolderPage> {
     }
   }
 
-  void delete(index) {
+  void delete(int index) {
     Util.showCustomDialog(
-        context: context,
-        title: "Are you sure?",
-        content: "Delete Folder?",
-        function: () {
-          widget.user.folders!.removeAt(index);
-          updateUser();
-        });
+      context: context,
+      title: "folder_page.are_you_sure".tr(), // "Are you sure?"
+      content: "folder_page.delete_folder".tr(), // "Delete Folder?"
+      function: () {
+        widget.user.folders!.removeAt(index);
+        updateUser();
+      },
+    );
   }
 
   void createFolder() async {
@@ -62,28 +64,31 @@ class _FolderPageState extends State<FolderPage> {
     String? inputText;
     return showDialog<String>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return AlertDialog(
-          title: const Text('Enter Folder Name'),
+          title:
+              Text("folder_page.enter_folder_name".tr()), // "Enter Folder Name"
           content: TextField(
             onChanged: (value) {
               inputText = value;
             },
-            decoration: const InputDecoration(hintText: 'Enter Folder Name'),
+            decoration: InputDecoration(
+              hintText:
+                  "folder_page.enter_folder_name_hint".tr(), // "Folder Name"
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context)
-                    .pop(null); // Close dialog without returning a value
+                Navigator.of(ctx).pop(null);
               },
-              child: const Text('Cancel'),
+              child: Text("folder_page.cancel".tr()), // "Cancel"
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(inputText); // Return the input text
+                Navigator.of(ctx).pop(inputText);
               },
-              child: const Text('Submit'),
+              child: Text("folder_page.submit".tr()), // "Submit"
             ),
           ],
         );
@@ -99,20 +104,16 @@ class _FolderPageState extends State<FolderPage> {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: folders!.length, // Specify itemCount
+              itemCount: folders?.length ?? 0,
               itemBuilder: (context, index) => Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
                 elevation: 4,
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
-                    vertical: 8.0,
-                    horizontal: 16.0,
-                  ),
+                      vertical: 8.0, horizontal: 16.0),
                   title: Text(
                     folders![index].folderName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -127,7 +128,7 @@ class _FolderPageState extends State<FolderPage> {
                         ),
                         child: const Icon(Icons.drive_file_rename_outline),
                       ),
-                      const SizedBox(width: 8), // Add spacing between buttons
+                      const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => delete(index),
                         style: ElevatedButton.styleFrom(
@@ -135,7 +136,6 @@ class _FolderPageState extends State<FolderPage> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8.0),
                           ),
-                          backgroundColor: Colors.red, // Red for delete button
                         ),
                         child: const Icon(Icons.delete),
                       ),
@@ -145,11 +145,11 @@ class _FolderPageState extends State<FolderPage> {
               ),
             ),
           ),
-          const SizedBox(height: 16), // Space between list and button
+          const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: createFolder,
             icon: const Icon(Icons.create_new_folder),
-            label: const Text("Klasör Oluştur"),
+            label: Text("folder_page.create_folder".tr()), // "Klasör Oluştur"
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               shape: RoundedRectangleBorder(

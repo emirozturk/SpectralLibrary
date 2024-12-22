@@ -18,7 +18,7 @@ SECRET_KEY = "spectralsecretkeywithemirozturk"
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/spectraldb"
 mongo = PyMongo(app)
-CORS(app,resources={r"/*":{"origins":"*"}})  # This will allow all origins by default
+CORS(app,resources={r"/*":{"origins":"*"}})
 
 def token_required(f):
     @wraps(f)
@@ -31,7 +31,7 @@ def token_required(f):
             # Assume token is prefixed with "Bearer "
             token = token.replace("Bearer ", "")
             decoded_token = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            current_user_id = decoded_token.get("userId")
+            current_user_id = decoded_token.get("email")
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return jsonify({"success": False, "message": "Invalid or expired token"}), 403
         
@@ -43,15 +43,25 @@ def token_required(f):
 def check_login():
     email = request.json.get("email")
     password = request.json.get("password")
-    foundMongoUser = mongo.db.users.find_one({"email":email,"password":password})
+    foundMongoUser = mongo.db.users.find_one({"email":email})
     if foundMongoUser !=None:
-        foundUser = User.from_map(foundMongoUser)
-        token = jwt.encode({
-            'userId': foundMongoUser['userId'],
-            'exp': datetime.now() + timedelta(hours=1)
-        }, SECRET_KEY, algorithm="HS256")
-        foundUser.token = token
-        return jsonify(Response.success(foundUser.to_map()).to_map()),200
+        if foundMongoUser["password"]== password:
+            foundUser = User.from_map(foundMongoUser)
+            if foundUser.is_confirmed:
+                token = jwt.encode({
+                    'email': foundMongoUser['email'],
+                    'exp': datetime.now() + timedelta(hours=1)
+                }, SECRET_KEY, algorithm="HS256")
+                foundUser.token = token
+                return jsonify(Response.success(foundUser.to_map()).to_map()),200
+            else:
+                response = jsonify(Response(False, {}, "User is not confirmed").to_map())
+                response.headers.add("Access-Control-Allow-Origin","*")
+                return response            
+        else:
+            response = jsonify(Response(False, {}, "Wrong Password").to_map())
+            response.headers.add("Access-Control-Allow-Origin","*")
+            return response      
     else:
         response = jsonify(Response(False, {}, "User Not Found").to_map())
         response.headers.add("Access-Control-Allow-Origin","*")
@@ -64,7 +74,7 @@ def add_user():
         
         user = User.from_map(data)
         
-        existing_user = mongo.db.users.find_one({"userId": user.user_id})
+        existing_user = mongo.db.users.find_one({"email": user.email})
         if existing_user:
             return jsonify(Response(False, {}, "User already exists").to_map()), 400
 
@@ -75,34 +85,49 @@ def add_user():
 
 @app.put("/api/Users/")
 @token_required
-def update_user(userId):
+def update_user(email):
         data = request.json
         user = User.from_map(data)        
-        found_user_m = mongo.db.users.find_one({"userId": user.user_id})
+        found_user_m = mongo.db.users.find_one({"email": user.email})        
         if not found_user_m:
             return jsonify(Response(False, {}, "User Not Found").to_map()), 400
 
-        mongo.db.users.replace_one({"userId": user.user_id}, user.to_map())
+        mongo.db.users.replace_one({"email": user.email}, user.to_map())
 
-        return jsonify(Response(True, user.to_map(), "User successfully updated").to_map()), 201
+        return jsonify(Response(True, user.to_map(), "Success").to_map()), 201
 
+
+@app.delete("/api/Users/<mail>")
+@token_required
+def delete_user(email,mail):
+    # Find user by email
+    found_user_m = mongo.db.users.find_one({"email": mail}) # Use email directly
+    if not found_user_m:
+        return jsonify(Response(False, {}, "User Not Found").to_map()), 400
+
+    # Delete user by email
+    mongo.db.users.delete_one({"email": mail})
+
+    return jsonify(Response(True, {}, "User successfully deleted").to_map()), 200
+
+    
 
 @app.post("/api/Users/ResetPassword")
 def reset_password():
         data = request.json
-        found_user_m = mongo.db.users.find_one({"email": data})
+        found_user_m = mongo.db.users.find_one({"email": data["email"]})
         if not found_user_m:
             return jsonify(Response(False, {}, "User Not Found").to_map()), 400
         user = User.from_map(found_user_m)
         user.password = "202cb962ac59075b964b07152d234b70"
-        mongo.db.users.replace_one({"userId": user.user_id}, user.to_map())
+        mongo.db.users.replace_one({"email": user.email}, user.to_map())
 
         return jsonify(Response(True, user.to_map(), "Password has been reset").to_map()), 201
     
     
 @app.get("/api/Users/")
 @token_required
-def get_users(userId):
+def get_users(email):
     users_m = mongo.db.users.find()
     users = [User.from_map(x) for x in users_m]
     response = jsonify(Response(True,[x.to_map() for x in users],"").to_map()) 
@@ -111,8 +136,8 @@ def get_users(userId):
     
 @app.get("/api/SharedFiles")
 @token_required
-def get_sharedFiles(userId):
-    found_user_m = mongo.db.users.find_one({"userId": user.user_id})
+def get_sharedFiles(email):
+    found_user_m = mongo.db.users.find_one({"email": email})
     found_user = User.from_map(found_user_m)
      
     file_list = []
@@ -130,7 +155,7 @@ def get_sharedFiles(userId):
 
 @app.get("/api/PublicFiles")
 @token_required
-def get_publicFiles(userId):
+def get_publicFiles(email):
     file_list = []
     all_users_m = mongo.db.users.find()
     all_users = [User.from_map(x) for x in all_users_m]
@@ -146,21 +171,21 @@ def get_publicFiles(userId):
 
 @app.get("/api/Categories")
 @token_required
-def get_categories(userId):
+def get_categories(email):
     categories_m = mongo.db.categories.find()     
     categories = [Category.from_map(x) for x in categories_m]
     response = jsonify(Response(True,[x.to_map() for x in categories],"").to_map()) 
     return response
 
 
-@app.post("/api/Categories/")
+@app.post("/api/Categories")
 @token_required
-def add_category():
+def add_category(email):
         data = request.json
         
         category = Category.from_map(data)
         
-        existing_category = mongo.db.users.find_one({"categoryNameTr": category.category_name_tr})
+        existing_category = mongo.db.categories.find_one({"categoryNameTr": category.category_name_tr,"categoryNameEn": category.category_name_en})
         if existing_category:
             return jsonify(Response(False, {}, "Category already exists").to_map()), 400
 
@@ -169,26 +194,26 @@ def add_category():
         return jsonify(Response(True, category.to_map(), "Category successfully created").to_map()), 201
 
 
-@app.put("/api/Categories/")
+@app.put("/api/Categories/<oldCNTr>/<oldCNEn>")
 @token_required
-def update_category():
+def update_category(email,oldCNTr,oldCNEn):
         data = request.json        
         category = Category.from_map(data)        
-        found_category_m = mongo.db.users.find_one({"categoryNameTr": category.category_name_tr})
+        found_category_m = mongo.db.categories.find_one({"categoryNameTr": oldCNTr,"categoryNameEn":oldCNEn})
         if not found_category_m:
             return jsonify(Response(False, {}, "Category Not Found").to_map()), 400
 
-        mongo.db.categories.replace_one({"categoryNameTr":category.category_name_tr}, category.to_map())
+        mongo.db.categories.replace_one({"categoryNameTr": oldCNTr,"categoryNameEn":oldCNEn}, category.to_map())
 
         return jsonify(Response(True, category.to_map(), "Category successfully updated").to_map()), 201
 
 
-@app.delete("/api/Categories/")
+@app.delete("/api/Categories")
 @token_required
-def delete_category():
+def delete_category(email):
         data = request.json        
         category = Category.from_map(data)        
-        found_category_m = mongo.db.users.find_one({"categoryNameTr": category.category_name_tr})
+        found_category_m = mongo.db.categories.find_one({"categoryNameTr": category.category_name_tr,"categoryNameEn": category.category_name_en})
         if not found_category_m:
             return jsonify(Response(False, {}, "Category Not Found").to_map()), 400
 
@@ -199,7 +224,7 @@ def delete_category():
 
 @app.get("/api/Admin/UserCount")
 @token_required
-def get_user_count(userId):
+def get_user_count(email):
     users_m = mongo.db.users.find()
     users = [User.from_map(x) for x in users_m]
     response = jsonify(Response(True,len(users),"").to_map()) 
@@ -208,7 +233,7 @@ def get_user_count(userId):
 
 @app.get("/api/Admin/FileCount")
 @token_required
-def get_file_count(userId):
+def get_file_count(email):
     users_m = mongo.db.users.find()
     users = [User.from_map(x) for x in users_m]
     fileCount = 0
@@ -222,7 +247,7 @@ def get_file_count(userId):
 
 @app.get("/api/Admin/FolderCount")
 @token_required
-def get_folder_count(userId):
+def get_folder_count(email):
     users_m = mongo.db.users.find()
     users = [User.from_map(x) for x in users_m]
     folderCount = 0
@@ -235,7 +260,7 @@ def get_folder_count(userId):
 
 @app.get("/api/Admin/FileCategoryRatios")
 @token_required
-def get_filecategory_ratios(userId):
+def get_filecategory_ratios(email):
     users_m = mongo.db.users.find()
     users = [User.from_map(x) for x in users_m]
     category_ratios={}
@@ -249,251 +274,3 @@ def get_filecategory_ratios(userId):
 
     response = jsonify(Response(True,category_ratios,"").to_map()) 
     return response
-"""
-
-@app.post('/api/Sinavci/CheckClassroom')
-def check_classroom():
-    student_id = request.json.get('student_id')    
-    
-    start_time = datetime.now() - timedelta(minutes=15)
-    end_time = datetime.now() + timedelta(minutes=10)
-    found_exams = list(mongo.db.exams.find({
-            "exam_datetime": {
-                "$gte": start_time,
-                "$lte": end_time
-            }
-        }))
-    locations = []
-    if not found_exams:
-        return jsonify({'location': None})
-    else:
-        location = None
-        for exam in found_exams:
-            examClass = Exam.from_map(exam)
-            location = next((entry[student_id] for entry in examClass.student_dict if student_id in entry), None)
-            if location is not None:
-                locations.append(location)
-
-    if len(locations) == 0:
-        locations = "Bulunamadı"
-
-    return jsonify({'location': " ".join(locations)})
-
-
-@app.post("/api/Sinavci/AddExams")
-@token_required
-def sinavci_add_exams(current_user_id):
-    if not current_user_id=="7646":
-        return "Nooo"
-    pdf_path = request.json.get('pdf_path')
-    schedule_dict = read_schedule(os.path.join(pdf_path,"schedule.txt"))
-    exams = read_exams(pdf_path,schedule_dict)
-    for exam in exams:
-        mongo_exam = mongo.db.exams.find_one({"name": exam.name,"exam_datetime":exam.exam_datetime})    
-        if not mongo_exam:
-            mongo.db.exams.insert_one(exam.to_map())
-        else:
-            mongo.db.users.update_one(
-                {"name": exam["name"]},
-                {"$set": {
-                    "exam_datetime": exam['exam_datetime'],
-                    "student_dict": exam['student_dict'],
-                }}
-            )
-
-    response = jsonify({
-        "success": True,
-    })
-    response.headers.add("Access-Control-Allow-Origin","*")
-    return response
-
-
-
-
-@app.get("/api/Users/")
-@token_required
-def get_users(current_user_id):
-    if current_user_id=="1060203022":
-        users = mongo.db.users.find()     
-        user_list=[]   
-        for user in users:
-            user["transcript"]=None
-            userr = User.from_map(user).to_map()
-            user_list.append(userr)
-        response = jsonify(Response(True,user_list,"").to_map()) 
-        response.headers.add("Access-Control-Allow-Origin","*")
-        return response
-
-
-@app.get("/api/Users/Empty")
-@token_required
-def get_users_without_gno(current_user_id):
-    if current_user_id=="1060203022":
-        users = mongo.db.users.find()     
-        user_list=[]   
-        for user in users:
-            if user["gnocheck"]==None:
-                user["transcript"]=None
-                userr = User.from_map(user).to_map()
-                user_list.append({"no":userr["userId"],"adsoyad":userr["name"]})
-        response = jsonify(Response(True,user_list,"").to_map()) 
-        response.headers.add("Access-Control-Allow-Origin","*")
-        return response
-
-
-@app.post("/api/Users/CheckUser")
-def check_user():
-    data = request.json
-    user = User.from_map(data)
-
-    user_record = mongo.db.users.find_one({"userId": user.user_id})
-    
-    if user_record:        
-        if user.password==user_record['password']:
-            token = jwt.encode({
-                'userId': user_record['userId'],
-                'exp': datetime.now() + timedelta(hours=1)
-            }, SECRET_KEY, algorithm="HS256")
-            user = User.from_map(user_record)
-            user.transcript = None
-            user_with_token = UserWithToken(user, token)
-            result = user_with_token.to_map()
-            response = jsonify(Response(True, result, "Başarılı").to_map())
-            response.headers.add("Access-Control-Allow-Origin","*")
-            return response
-        else:
-            response = jsonify(Response(False, {}, "Hatalı Şifre").to_map())
-            response.headers.add("Access-Control-Allow-Origin","*")
-            return response
-    else:
-        response = jsonify(Response(False, {}, "Kullanıcı Bulunamadı").to_map())
-        response.headers.add("Access-Control-Allow-Origin","*")
-        return response
-
-
-@app.post("/api/Users/ResetPassword")
-def reset_password():
-    return Response(True,"Şifre Sıfırlandı","").to_map()
-
-
-@app.post("/api/postSelections")
-@token_required
-def post_selections(current_user_id):
-    file = request.files.get('file')
-    
-    user_with_token = request.form.get('userWithToken')
-    selected_lecturers = request.form.get('selectedLecturers')
-    gno = request.form.get('gno')
-
-    # Retrieve the current user from MongoDB
-    user_record = mongo.db.users.find_one({"userId": current_user_id})
-    
-    # If the user doesn't exist, return an error
-    if not user_record:
-        return Response(False,"Kullanıcı Bulunamadı","").to_map()
-
-    # Convert the MongoDB document into a User object
-    user = User.from_map(user_record)
-
-    # Update the user object with new selections and gno
-    user_with_token_data = json.loads(user_with_token)
-    selected_lecturers_data = json.loads(selected_lecturers)
-    
-    user.selections = selected_lecturers_data
-    user.gno = float(gno)  # Ensure gno is stored as a float
-
-    # Handle file upload and save the transcript to MongoDB
-    if file:
-        # Read file contents in binary
-        file_content = file.read()
-        # Store the transcript (binary content) in the user object
-        user.transcript = file_content
-
-    # Convert the updated User object back into a dictionary for MongoDB
-    updated_user_data = user.to_map()
-
-    # Update the user's record in MongoDB, specifying the fields to update
-    mongo.db.users.update_one(
-        {"userId": current_user_id},
-        {"$set": {
-            "selections": updated_user_data['selections'],
-            "gno": updated_user_data['gno'],
-            "transcript": updated_user_data['transcript']  # Save transcript
-        }}
-    )
-
-    response = jsonify({
-        "success": True,
-        "filename": file.filename if file else None,
-        "userWithToken": user_with_token_data,
-        "selectedLecturers": selected_lecturers_data
-    })
-    response.headers.add("Access-Control-Allow-Origin","*")
-    return response
-
-    
-@app.get("/api/getSelections")
-@token_required
-def get_selections(current_user_id):    
-    user_record = mongo.db.users.find_one({"userId": current_user_id})
-    if not user_record:
-        return Response(False,"Kullanıcı Bulunamadı","").to_map()
-
-
-    user = User.from_map(user_record)
-    if user.gno == None:
-        user.gno = 0
-    list_of_lecturers = user.selections+[f"{user.gno}"]
-    response = jsonify(Response(True,list_of_lecturers,"").to_map())   
-    response.headers.add("Access-Control-Allow-Origin","*")
-    return response 
-
-
-@app.get("/api/getResultLecturer")
-@token_required
-def get_result_lecturer(current_user_id):    
-    user_record = mongo.db.users.find_one({"userId": current_user_id})
-    if not user_record:
-        return Response(False,"Kullanıcı Bulunamadı","").to_map()
-
-
-    user = User.from_map(user_record)
-    response = jsonify(Response(True,user.lecturer_result,"").to_map())   
-    response.headers.add("Access-Control-Allow-Origin","*")
-    return response 
-
-    
-@app.get("/api/getLecturers")
-@token_required
-def get_lecturer_names(current_user_id):
-    user_record = mongo.db.users.find_one({"userId": current_user_id})    
-    if not user_record:
-        return Response(False,"Kullanıcı Bulunamadı","").to_map()
-
-    list_of_lecturers = [
-        "",
-        "Prof. Dr. Muharrem Tolga SAKALLI",
-        "Doç. Dr. Deniz Mertkan GEZGİN",
-        "Dr. Öğr. Üyesi Altan MESUT",
-        "Dr. Öğr. Üyesi Andaç ŞAHİN MESUT",
-        "Dr. Öğr. Üyesi Aydın CARUS",
-        "Dr. Öğr. Üyesi Cem TAŞKIN",
-        "Dr. Öğr. Üyesi Deniz TAŞKIN",
-        "Dr. Öğr. Üyesi Derya ALSANCAK ARDA",
-        "Dr. Öğr. Üyesi Emir ÖZTÜRK",
-        "Dr. Öğr. Üyesi Fatma BÜYÜKSARAÇOĞLU SAKALLI",
-        "Dr. Öğr. Üyesi Özlem AYDIN FİDAN",
-        "Dr. Öğr. Üyesi Özlem UÇAR",
-        "Dr. Öğr. Üyesi Rembiye KANDEMİR",
-        "Dr. Öğr. Üyesi Tarık YERLİKAYA",
-        "Dr. Öğr. Üyesi Turgut DOĞAN",
-        "Dr. Öğr. Üyesi Gülsüm Gözde YILMAZGÜÇ BAL"
-        "Arş. Gör. Dr. Işıl ÇETİNTAV",
-        "Arş. Gör. Dr. Ümit Can KUMDERELİ"
-    ]
-    response = jsonify(Response(True,list_of_lecturers,"").to_map())
-    response.headers.add("Access-Control-Allow-Origin","*")
-    return response
-
-
-"""

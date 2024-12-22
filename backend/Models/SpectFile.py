@@ -1,12 +1,13 @@
 from typing import Optional, List
 
 from Models.Data import Data
+from Models.Category import Category
 
 class SpectFile:
     def __init__(
         self,
         filename: str,
-        category: str,
+        category: Category,
         is_public: bool,
         data_points: List[Data],
         file_id: Optional[int] = None,
@@ -25,18 +26,23 @@ class SpectFile:
         return {
             "fileId": self.file_id,
             "filename": self.filename,
-            "category": self.category,
+            "category": self.category.to_map() if self.category else None,
             "description": self.description,
             "isPublic": self.is_public,
             "dataPoints": [data.to_map() for data in self.data_points],
             "sharedWith": self.shared_with,
         }
+
     @classmethod
     def from_map(cls, data):
+        # If data.get("category") is not None, parse it as a Category
+        category_map = data.get("category")
+        category_obj = Category.from_map(category_map) if category_map else None
+
         return cls(
             file_id=data.get("fileId"),
             filename=data["filename"],
-            category=data["category"],
+            category=category_obj,  # Now it's a Category object
             description=data.get("description"),
             is_public=data["isPublic"],
             data_points=[Data.from_map(dp) for dp in data["dataPoints"]],

@@ -1,54 +1,58 @@
 import 'dart:convert';
-
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart'; // For .tr()
 
 class Util {
+  /// MD5 Hash
   static String calculateMD5(String password) {
     List<int> bytes = utf8.encode(password);
     Digest md5Hash = md5.convert(bytes);
-    String md5Password = md5Hash.toString();
-    return md5Password;
+    return md5Hash.toString();
   }
 
-  static void showCustomDialog(
-      {required BuildContext context,
-      required String title,
-      required String content,
-      required var function}) {
+  /// A custom dialog with two buttons (YES / NO)
+  static void showCustomDialog({
+    required BuildContext context,
+    required String title,
+    required String content,
+    required VoidCallback function,
+  }) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return AlertDialog(
           title: Text(
-            title,
-            style: Theme.of(context)
+            // We assume `title` is also a localization key, e.g. "general.some_title"
+            title.tr(),
+            style: Theme.of(ctx)
                 .textTheme
                 .bodyMedium!
                 .copyWith(fontWeight: FontWeight.bold),
           ),
           content: Text(
-            content,
-            style: Theme.of(context).textTheme.bodyMedium,
+            // Same assumption here: "general.some_message"
+            content.tr(),
+            style: Theme.of(ctx).textTheme.bodyMedium,
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
                 function();
               },
               child: Text(
-                'Evet',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'general.yes'.tr(), // "Evet" / "Yes"
+                style: Theme.of(ctx).textTheme.bodyMedium,
               ),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(ctx).pop();
               },
               child: Text(
-                'Hayır',
-                style: Theme.of(context).textTheme.bodyMedium,
+                'general.no'.tr(), // "Hayır" / "No"
+                style: Theme.of(ctx).textTheme.bodyMedium,
               ),
             ),
           ],
@@ -57,32 +61,32 @@ class Util {
     );
   }
 
-  static void showInfoDialog(
-      {required BuildContext context,
-      required String content}) {
-    showDialog(
+  /// Show an informational dialog (OK)
+  static Future<void> showInfoDialog({
+    required BuildContext context,
+    required String content, // e.g. "general.success_message"
+  }) {
+    return showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return AlertDialog(
           title: Text(
-            "Başarılı",//TODO:Multilingual
-            style: Theme.of(context)
+            'general.success'.tr(), // "Başarılı" / "Success"
+            style: Theme.of(ctx)
                 .textTheme
                 .bodyMedium!
                 .copyWith(fontWeight: FontWeight.bold),
           ),
           content: Text(
-            content,
-            style: Theme.of(context).textTheme.bodyMedium,
+            content.tr(),
+            style: Theme.of(ctx).textTheme.bodyMedium,
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(ctx).pop(),
               child: Text(
-                'Tamam', //TODO:Multilingual
-                style: Theme.of(context).textTheme.bodyMedium,
+                'general.ok'.tr(), // "Tamam" / "OK"
+                style: Theme.of(ctx).textTheme.bodyMedium,
               ),
             ),
           ],
@@ -90,32 +94,33 @@ class Util {
       },
     );
   }
-  static void showErrorDialog(
-      {required BuildContext context,
-      required String content}) {
+
+  /// Show an error dialog (OK)
+  static void showErrorDialog({
+    required BuildContext context,
+    required String content, // e.g. "general.error_message"
+  }) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext ctx) {
         return AlertDialog(
           title: Text(
-            "Başarısız", //TODO:Multilingual
-            style: Theme.of(context)
+            'general.failed'.tr(), // "Başarısız" / "Failed"
+            style: Theme.of(ctx)
                 .textTheme
                 .bodyMedium!
                 .copyWith(fontWeight: FontWeight.bold),
           ),
           content: Text(
-            content,
-            style: Theme.of(context).textTheme.bodyMedium,
+            content.tr(),
+            style: Theme.of(ctx).textTheme.bodyMedium,
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(ctx).pop(),
               child: Text(
-                'Tamam', //TODO:Multilingual
-                style: Theme.of(context).textTheme.bodyMedium,
+                'general.ok'.tr(), // "Tamam" / "OK"
+                style: Theme.of(ctx).textTheme.bodyMedium,
               ),
             ),
           ],
@@ -123,16 +128,20 @@ class Util {
       },
     );
   }
-  static void showErrorSnackBar(BuildContext context, var text) {
+
+/*
+  // If needed, localize your snack bar too
+  static void showErrorSnackBar(BuildContext context, String messageKey) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(text),
+        content: Text(messageKey.tr()),
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
-          label: 'Kapat',
+          label: 'general.ok'.tr(), // or 'general.close'.tr() etc.
           onPressed: () {},
         ),
       ),
     );
   }
+*/
 }

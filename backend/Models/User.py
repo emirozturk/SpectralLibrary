@@ -51,5 +51,6 @@ class User:
             is_confirmed=data["isConfirmed"],
             company=data["company"],
             token=data.get("token"),
-            folders=[Folder.from_map(folder) for folder in data.get("folders", [])],
+            # Use 'or []' to default to an empty list if 'folders' is None or not present
+            folders=[Folder.from_map(folder) for folder in data.get("folders") or []],
         )

@@ -6,6 +6,7 @@ import 'package:spectral_library/Models/folder.dart';
 import 'package:spectral_library/Models/spect_file.dart';
 import 'package:spectral_library/Models/user.dart';
 import 'package:spectral_library/Widgets/draw_plot_page.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class UserMainpage extends StatefulWidget {
   final User user;
@@ -33,35 +34,45 @@ class _UserMainpageState extends State<UserMainpage> {
     _fetchInitialData();
   }
 
+  // Helper method for localized category names
+  String getLocalizedCategoryName(Category category) {
+    return context.locale.languageCode == 'en'
+        ? category.categoryNameEn
+        : category.categoryNameTr;
+  }
+
   Future<void> _fetchInitialData() async {
-    var categoryResponse = await CategoryController.getCategories(widget.user);
+    final categoryResponse =
+        await CategoryController.getCategories(widget.user);
     if (categoryResponse.isSuccess) {
       categories = (categoryResponse.body as List<dynamic>)
           .map((x) => Category.fromMap(x))
           .toList();
     }
 
-    folders = widget.user.folders!;
-    files = widget.user.folders!
+    folders = widget.user.folders ?? [];
+    files = folders
         .map((x) => x.files)
-        .expand((list) => list!)
+        .expand((list) => list ?? <SpectFile>[])
         .toList();
 
-    var sharedFilesResponse = await UserController.getSharedFiles(widget.user);
+    final sharedFilesResponse =
+        await UserController.getSharedFiles(widget.user);
     if (sharedFilesResponse.isSuccess) {
       sharedFiles = (sharedFilesResponse.body as List<dynamic>)
           .map((x) => SpectFile.fromMap(x))
           .toList();
     }
 
-    var publicFilesResponse = await UserController.getPublicFiles(widget.user);
+    final publicFilesResponse =
+        await UserController.getPublicFiles(widget.user);
     if (publicFilesResponse.isSuccess) {
       publicFiles = (publicFilesResponse.body as List<dynamic>)
           .map((x) => SpectFile.fromMap(x))
           .toList();
     }
 
-    var usersResponse = await UserController.getUsers(widget.user);
+    final usersResponse = await UserController.getUsers(widget.user);
     if (usersResponse.isSuccess) {
       allUsers = (usersResponse.body as List<dynamic>)
           .map((x) => User.fromMap(x))
@@ -73,14 +84,14 @@ class _UserMainpageState extends State<UserMainpage> {
 
   Future<void> _deleteFile(SpectFile file) async {
     setState(() {
-      for (var folder in widget.user.folders!) {
+      for (var folder in widget.user.folders ?? []) {
         folder.files?.removeWhere((f) => f.filename == file.filename);
       }
       files.remove(file);
     });
-    await UserController.updateUser(widget.user);
+    await UserController.updateUser(widget.user, widget.user);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("File deleted successfully.")),
+      SnackBar(content: Text("user_mainpage.file_deleted".tr())),
     );
   }
 
@@ -88,19 +99,28 @@ class _UserMainpageState extends State<UserMainpage> {
     setState(() {
       file.isPublic = !file.isPublic;
     });
-    await UserController.updateUser(widget.user);
+    await UserController.updateUser(widget.user, widget.user);
+
+    // "File '{filename}' is now {status}."
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          "File '${file.filename}' is now ${file.isPublic ? "public" : "private"}.",
+          "user_mainpage.file_is_now".tr(
+            namedArgs: {
+              "filename": file.filename,
+              "status": file.isPublic
+                  ? "user_mainpage.public".tr()
+                  : "user_mainpage.private".tr()
+            },
+          ),
         ),
       ),
     );
   }
 
   Future<void> _shareFile(SpectFile file) async {
-    Set<String> selectedUserEmails = file.sharedWith?.toSet() ?? {};
-    TextEditingController searchController = TextEditingController();
+    final selectedUserEmails = file.sharedWith?.toSet() ?? {};
+    final TextEditingController searchController = TextEditingController();
     List<User> filteredUsers = allUsers;
 
     await showDialog(
@@ -109,7 +129,7 @@ class _UserMainpageState extends State<UserMainpage> {
         return AlertDialog(
           title: Text("Share File: ${file.filename}"),
           content: StatefulBuilder(
-            builder: (context, setState) {
+            builder: (ctx, setStateSB) {
               return SizedBox(
                 width: 400,
                 child: Column(
@@ -118,13 +138,13 @@ class _UserMainpageState extends State<UserMainpage> {
                     // Search Field
                     TextField(
                       controller: searchController,
-                      decoration: const InputDecoration(
-                        labelText: "Search Users",
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        labelText: "user_mainpage.search_users".tr(),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.search),
                       ),
                       onChanged: (value) {
-                        setState(() {
+                        setStateSB(() {
                           filteredUsers = allUsers.where((user) {
                             return user.email
                                 .toLowerCase()
@@ -137,17 +157,18 @@ class _UserMainpageState extends State<UserMainpage> {
                     // User List
                     Flexible(
                       child: filteredUsers.isEmpty
-                          ? const Center(child: Text("No users found."))
+                          ? Center(
+                              child: Text("user_mainpage.no_users_found".tr()))
                           : ListView(
                               shrinkWrap: true,
                               children: filteredUsers.map((user) {
-                                bool isSelected =
+                                final isSelected =
                                     selectedUserEmails.contains(user.email);
                                 return CheckboxListTile(
                                   title: Text(user.email),
                                   value: isSelected,
                                   onChanged: (selected) {
-                                    setState(() {
+                                    setStateSB(() {
                                       if (selected == true) {
                                         selectedUserEmails.add(user.email);
                                       } else {
@@ -167,21 +188,28 @@ class _UserMainpageState extends State<UserMainpage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text(
+                  "folder_page.cancel".tr()), // or "Cancel" from user_mainpage
             ),
             TextButton(
               onPressed: () async {
                 file.sharedWith = selectedUserEmails.toList();
-                await UserController.updateUser(widget.user);
+                await UserController.updateUser(widget.user, widget.user);
                 Navigator.pop(context);
+
+                // "File '{filename}' shared successfully."
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content:
-                        Text("File '${file.filename}' shared successfully."),
+                    content: Text(
+                      "user_mainpage.file_shared".tr(
+                        namedArgs: {"filename": file.filename},
+                      ),
+                    ),
                   ),
                 );
               },
-              child: const Text("Save"),
+              child: Text("admin_category_management.save".tr()),
+              // or "Save" from a different key
             ),
           ],
         );
@@ -189,30 +217,32 @@ class _UserMainpageState extends State<UserMainpage> {
     );
   }
 
-  void _onDrawPlots(List<SpectFile> selectedFiles) {
-    if (selectedFiles.isEmpty) {
+  void _onDrawPlots(List<SpectFile> allSelectedFiles) {
+    if (allSelectedFiles.isEmpty) {
+      // "No files selected for plotting."
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No files selected for plotting.")),
+        SnackBar(content: Text("user_mainpage.no_files_selected".tr())),
       );
       return;
     }
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => DrawPlotPage(selectedFiles: selectedFiles),
+        builder: (context) => DrawPlotPage(selectedFiles: allSelectedFiles),
       ),
     );
   }
 
   Widget _buildUserFilesSection() {
     return ExpansionTile(
-      title: const Text("Your Files"),
+      title: Text("user_mainpage.your_files".tr()),
       children: [
         ...files.map((file) {
           return CheckboxListTile(
             title: Text(file.filename),
-            subtitle:
-                Text("Category: ${file.category}, Public: ${file.isPublic}"),
+            subtitle: Text(
+              "Category: ${getLocalizedCategoryName(file.category)}, Public: ${file.isPublic}",
+            ),
             value: selectedFiles.contains(file),
             onChanged: (isSelected) {
               setState(() {
@@ -232,7 +262,8 @@ class _UserMainpageState extends State<UserMainpage> {
                 ),
                 IconButton(
                   icon: Icon(
-                      file.isPublic ? Icons.visibility : Icons.visibility_off),
+                    file.isPublic ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () => _togglePublic(file),
                 ),
                 IconButton(
@@ -242,30 +273,37 @@ class _UserMainpageState extends State<UserMainpage> {
               ],
             ),
           );
-        }).toList(),
+        })
       ],
     );
   }
 
   Widget _buildCollapsibleList({
-    required String title,
+    required String titleKey,
     required List<SpectFile> fileList,
-    required List<SpectFile> selectedFilesList,
+    required List<SpectFile> selectedList,
   }) {
     return ExpansionTile(
-      title: Text(title),
+      title: Text(titleKey.tr()),
       children: fileList.isEmpty
-          ? [const Center(child: Text("No files to display."))]
+          ? [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("user_mainpage.no_files".tr()),
+                ),
+              )
+            ]
           : fileList.map((file) {
               return CheckboxListTile(
                 title: Text(file.filename),
-                value: selectedFilesList.contains(file),
+                value: selectedList.contains(file),
                 onChanged: (isSelected) {
                   setState(() {
                     if (isSelected == true) {
-                      selectedFilesList.add(file);
+                      selectedList.add(file);
                     } else {
-                      selectedFilesList.remove(file);
+                      selectedList.remove(file);
                     }
                   });
                 },
@@ -286,16 +324,16 @@ class _UserMainpageState extends State<UserMainpage> {
 
             // Shared Files Section
             _buildCollapsibleList(
-              title: "Shared Files",
+              titleKey: "user_mainpage.shared_files",
               fileList: sharedFiles,
-              selectedFilesList: selectedSharedFiles,
+              selectedList: selectedSharedFiles,
             ),
 
             // Public Files Section
             _buildCollapsibleList(
-              title: "Public Files",
+              titleKey: "user_mainpage.public_files",
               fileList: publicFiles,
-              selectedFilesList: selectedPublicFiles,
+              selectedList: selectedPublicFiles,
             ),
 
             // Draw Plots Button
@@ -310,7 +348,7 @@ class _UserMainpageState extends State<UserMainpage> {
                   ];
                   _onDrawPlots(allSelectedFiles);
                 },
-                child: const Text("Draw Plots"),
+                child: Text("user_mainpage.draw_plots".tr()),
               ),
             ),
           ],

@@ -84,7 +84,7 @@ class Request {
             "Content-Type": "application/json",
             'Authorization': 'Bearer ${user.token}'
           },
-          body: jsonEncode(body.toMap()));
+          body: body != null ? jsonEncode(body.toMap()) : null);
       return Response.fromMap(jsonDecode(response.body));
     } catch (e) {
       if (e is SocketException) {

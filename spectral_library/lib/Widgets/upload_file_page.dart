@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:spectral_library/Controllers/category_controller.dart';
@@ -10,11 +9,11 @@ import 'package:spectral_library/Models/folder.dart';
 import 'package:spectral_library/Models/spect_file.dart';
 import 'package:spectral_library/Models/user.dart';
 import 'package:spectral_library/util.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class UploadFilePage extends StatefulWidget {
-  User user;
-
-  UploadFilePage(this.user, {super.key});
+  final User user;
+  const UploadFilePage(this.user, {super.key});
 
   @override
   State<UploadFilePage> createState() => _UploadFilePageState();
@@ -23,101 +22,199 @@ class UploadFilePage extends StatefulWidget {
 class _UploadFilePageState extends State<UploadFilePage> {
   bool firstLoad = true;
 
-  var filenames;
-
-  List<Category> categories = [];
-
-  List<Category> subcategories = [];
-
-  List<Folder> folders = [];
-
-  var selectedCategory;
-
-  var selectedSubCategory;
-
-  var selectedFolder;
-
   List<Uint8List> selectedFiles = [];
+  List<String> filenames = [];
   List<TextEditingController> desiredFilenamesControllers = [];
   List<TextEditingController> descriptionControllers = [];
 
-  Future<void> selectFiles() async {
-    FilePickerResult? result =
-        await FilePicker.platform.pickFiles(allowMultiple: true);
+  List<Category> categories = [];
+  List<Category> subcategories = [];
+  List<Folder> folders = [];
 
+  String? selectedCategory;
+  String? selectedSubCategory;
+  String? selectedFolder;
+
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> selectFiles() async {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      withData: true,
+    );
     if (result != null) {
+      bool hasLargeFile = false;
+      for (var file in result.files) {
+        if (file.size > 50 * 1024 * 1024) {
+          // Example: 50 MB limit
+          hasLargeFile = true;
+          break;
+        }
+      }
+      if (hasLargeFile) {
+        Util.showErrorDialog(
+          context: context,
+          content: "upload_file_page.file_size_exceeded".tr(),
+        );
+        return;
+      }
       setState(() {
-        // Use bytes for web compatibility
         selectedFiles = result.files.map((file) => file.bytes!).toList();
         filenames = result.files.map((file) => file.name).toList();
+        desiredFilenamesControllers =
+            List.generate(selectedFiles.length, (_) => TextEditingController());
+        descriptionControllers =
+            List.generate(selectedFiles.length, (_) => TextEditingController());
       });
-    } else {
-      // User canceled the picker
     }
   }
 
   Future<SpectFile> parseFileToSpectFiles(
-      Uint8List fileBytes, String filename, String description) async {
-    // Convert bytes to a string
-    String fileContent = String.fromCharCodes(fileBytes);
+    Uint8List fileBytes,
+    String filename,
+    String description,
+  ) async {
+    final fileContent = String.fromCharCodes(fileBytes);
+    final lines = fileContent.split('\n');
 
-    List<String> lines = fileContent.split('\n');
-
-    List<Data> datapoints =
+    final datapoints =
         lines.where((line) => line.trim().isNotEmpty).map((line) {
-      List<String> values = line.split(",");
+      final values = line.split(",");
+      if (values.length < 2) {
+        throw FormatException("Invalid data format in file.");
+      }
       return Data(
         x: double.parse(values[0]),
         y: double.parse(values[1]),
       );
     }).toList();
 
-    // Create a single SpectFile for this file
-    SpectFile spectFile = SpectFile(
+    final category = categories.firstWhere(
+        (x) =>
+            x.categoryNameTr == selectedCategory ||
+            x.categoryNameEn == selectedCategory,
+        orElse: () => Category(categoryNameTr: "", categoryNameEn: ""));
+
+    if (category.categoryNameTr.isEmpty && category.categoryNameEn.isEmpty) {
+      throw Exception("Selected category not found.");
+    }
+
+    final spectFile = SpectFile(
       filename: filename,
-      category: selectedFolder!,
+      category: category,
       isPublic: false,
       dataPoints: datapoints,
       description: description,
     );
-
     return spectFile;
   }
 
-  Future<void> uploadFiles(context) async {
-    if (selectedFolder == null) {
-      Util.showErrorSnackBar(context, "Please select a folder");
+  Future<void> uploadFiles(BuildContext context) async {
+    // Validation
+    if (selectedFiles.isEmpty) {
+      Util.showErrorDialog(
+        context: context,
+        content: "upload_file_page.please_select_files".tr(),
+      );
       return;
     }
 
-    Folder? folder = widget.user.folders
-        ?.firstWhere((folder) => folder.folderName == selectedFolder);
-
-    for (int i = 0; i < selectedFiles.length; i++) {
-      String filename = desiredFilenamesControllers[i].text;
-      String description = descriptionControllers[i].text;
-
-      if (filename.isEmpty || description.isEmpty) {
-        Util.showErrorSnackBar(
-            context, "Please provide filenames and descriptions for all files");
-        return;
-      }
-
-      SpectFile spectFile =
-          await parseFileToSpectFiles(selectedFiles[i], filename, description);
-
-      folder!.files!.add(spectFile);
+    if (selectedCategory == null || selectedCategory!.isEmpty) {
+      Util.showErrorDialog(
+        context: context,
+        content: "upload_file_page.please_select_category".tr(),
+      );
+      return;
     }
 
-    await UserController.updateUser(widget.user);
+    if (selectedSubCategory == null || selectedSubCategory!.isEmpty) {
+      Util.showErrorDialog(
+        context: context,
+        content: "upload_file_page.please_select_subcategory".tr(),
+      );
+      return;
+    }
 
-    // Clear all fields after upload
-    clearForm();
-    Util.showErrorSnackBar(context, "Files uploaded successfully!");
+    if (selectedFolder == null || selectedFolder!.isEmpty) {
+      Util.showErrorDialog(
+        context: context,
+        content: "upload_file_page.please_select_folder".tr(),
+      );
+      return;
+    }
+
+    // Validate each file's desired filename and description
+    for (int i = 0; i < selectedFiles.length; i++) {
+      final filename = desiredFilenamesControllers[i].text.trim();
+      final description = descriptionControllers[i].text.trim();
+      if (filename.isEmpty) {
+        Util.showErrorDialog(
+          context: context,
+          content: "upload_file_page.please_provide_filenames".tr(),
+        );
+        return;
+      }
+      if (description.isEmpty) {
+        Util.showErrorDialog(
+          context: context,
+          content: "upload_file_page.please_provide_descriptions".tr(),
+        );
+        return;
+      }
+    }
+
+    // Proceed with uploading
+    try {
+      final folder = widget.user.folders?.firstWhere(
+          (f) => f.folderName == selectedFolder,
+          orElse: () => Folder(folderName: ""));
+
+      if (folder!.folderName.isEmpty) {
+        throw Exception("Selected folder not found.");
+      }
+
+      // Parse and add files
+      for (int i = 0; i < selectedFiles.length; i++) {
+        final filename = desiredFilenamesControllers[i].text.trim();
+        final description = descriptionControllers[i].text.trim();
+
+        final spectFile = await parseFileToSpectFiles(
+            selectedFiles[i], filename, description);
+        folder.files ??= [];
+        folder.files!.add(spectFile);
+      }
+
+      // Update user in DB
+      final response =
+          await UserController.updateUser(widget.user, widget.user);
+
+      if (response.isSuccess) {
+        // Clear form
+        clearForm();
+
+        // Show success message
+        Util.showInfoDialog(
+          context: context,
+          content: "upload_file_page.files_uploaded_successfully".tr(),
+        );
+      } else {
+        // Show error message from response
+        Util.showErrorDialog(
+          context: context,
+          content: response.message ?? "An error occurred.",
+        );
+      }
+    } catch (e) {
+      // Handle any unexpected errors
+      Util.showErrorDialog(
+        context: context,
+        content: e.toString(),
+      );
+    }
   }
 
-  void fetchCategories(context) async {
-    var response = await CategoryController.getCategories(widget.user);
+  void fetchCategories(BuildContext context) async {
+    final response = await CategoryController.getCategories(widget.user);
     if (response.isSuccess) {
       setState(() {
         categories = (response.body as List<dynamic>)
@@ -125,21 +222,22 @@ class _UploadFilePageState extends State<UploadFilePage> {
             .toList();
       });
     } else {
-      Util.showErrorSnackBar(context, response.message);
+      Util.showErrorDialog(context: context, content: response.message!);
     }
   }
 
-  void fillSubCategories(name) {
-    subcategories =
-        categories.where((x) => x.categoryNameTr == name).first.subCategories ??
-            [];
+  void fillSubCategories(String name) {
+    final mainCat = categories.firstWhere(
+        (x) => x.categoryNameTr == name || x.categoryNameEn == name,
+        orElse: () => Category(categoryNameTr: "", categoryNameEn: ""));
+    subcategories = mainCat.subCategories ?? [];
   }
 
   void fillFolders() {
     folders = widget.user.folders ?? [];
   }
 
-  void fetch(context) {
+  void fetch(BuildContext context) {
     fetchCategories(context);
     fillFolders();
   }
@@ -149,7 +247,7 @@ class _UploadFilePageState extends State<UploadFilePage> {
       selectedCategory = null;
       selectedSubCategory = null;
       selectedFolder = null;
-      filenames = null;
+      filenames.clear();
       selectedFiles.clear();
       desiredFilenamesControllers.clear();
       descriptionControllers.clear();
@@ -162,39 +260,39 @@ class _UploadFilePageState extends State<UploadFilePage> {
       firstLoad = false;
       fetch(context);
     }
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Select Files Button
             ElevatedButton.icon(
               onPressed: () async {
                 await selectFiles();
-                setState(() {
-                  for (var file in selectedFiles) {
-                    desiredFilenamesControllers.add(TextEditingController());
-                    descriptionControllers.add(TextEditingController());
-                  }
-                });
               },
               icon: const Icon(Icons.file_copy),
-              label: const Text("Select Files"),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
+              label: Text("upload_file_page.select_files".tr()),
             ),
             const SizedBox(height: 16),
-            filenames != null
-                ? const Text("Files Selected",
-                    style: TextStyle(fontWeight: FontWeight.bold))
-                : const Text("No Files Selected",
-                    style: TextStyle(fontStyle: FontStyle.italic)),
+
+            // Display Selected Files Status
+            Text(
+              filenames.isNotEmpty
+                  ? "upload_file_page.files_selected".tr()
+                  : "upload_file_page.no_files_selected".tr(),
+              style: TextStyle(
+                fontWeight:
+                    filenames.isNotEmpty ? FontWeight.bold : FontWeight.normal,
+                fontStyle:
+                    filenames.isEmpty ? FontStyle.italic : FontStyle.normal,
+              ),
+            ),
+
             const SizedBox(height: 16),
+
+            // List of chosen files
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -208,28 +306,37 @@ class _UploadFilePageState extends State<UploadFilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Original Filename
                         Text(
-                          "Original Filename: ${filenames[index]}",
+                          "${"upload_file_page.original_filename".tr()}: ${filenames[index]}",
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 8),
+
+                        // Desired Filename
                         TextField(
                           controller: desiredFilenamesControllers[index],
-                          decoration: const InputDecoration(
-                            labelText: "Desired Filename",
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText:
+                                "upload_file_page.desired_filename".tr() + " *",
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 8),
+
+                        // Description
                         TextField(
                           controller: descriptionControllers[index],
                           maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: "Description",
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText:
+                                "upload_file_page.description".tr() + " *",
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 8),
+
+                        // Delete File Button
                         Align(
                           alignment: Alignment.centerRight,
                           child: IconButton(
@@ -251,20 +358,33 @@ class _UploadFilePageState extends State<UploadFilePage> {
               },
             ),
             const SizedBox(height: 16),
+
+            // Category Dropdown
             DropdownSection(
-              label: "Category",
-              items: categories.map((x) => x.categoryNameTr).toList(),
+              label: "upload_file_page.category".tr() + " *",
+              items: categories
+                  .map((x) => x.categoryNameTr.isNotEmpty
+                      ? x.categoryNameTr
+                      : x.categoryNameEn)
+                  .toList(),
               selectedItem: selectedCategory,
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value;
-                  fillSubCategories(value);
+                  fillSubCategories(value!);
+                  selectedSubCategory = null; // Reset subcategory
                 });
               },
             ),
+
+            // SubCategory Dropdown
             DropdownSection(
-              label: "Subcategory",
-              items: subcategories.map((x) => x.categoryNameTr).toList(),
+              label: "upload_file_page.subcategory".tr() + " *",
+              items: subcategories
+                  .map((x) => x.categoryNameTr.isNotEmpty
+                      ? x.categoryNameTr
+                      : x.categoryNameEn)
+                  .toList(),
               selectedItem: selectedSubCategory,
               onChanged: (value) {
                 setState(() {
@@ -272,8 +392,10 @@ class _UploadFilePageState extends State<UploadFilePage> {
                 });
               },
             ),
+
+            // Folder Dropdown
             DropdownSection(
-              label: "Folder",
+              label: "upload_file_page.folder".tr() + " *",
               items: folders.map((x) => x.folderName).toList(),
               selectedItem: selectedFolder,
               onChanged: (value) {
@@ -283,19 +405,14 @@ class _UploadFilePageState extends State<UploadFilePage> {
               },
             ),
             const SizedBox(height: 16),
+
+            // Upload Button
             ElevatedButton.icon(
               onPressed: () async {
                 await uploadFiles(context);
               },
               icon: const Icon(Icons.upload_file),
-              label: const Text("Upload"),
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
+              label: Text("upload_file_page.upload".tr()),
             ),
           ],
         ),
@@ -325,7 +442,10 @@ class DropdownSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: selectedItem,
@@ -338,8 +458,10 @@ class DropdownSection extends StatelessWidget {
             onChanged: onChanged,
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
-              contentPadding:
-                  EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              contentPadding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16,
+              ),
             ),
           ),
         ],

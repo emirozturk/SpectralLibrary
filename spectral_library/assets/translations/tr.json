@@ -1,0 +1,120 @@
+{
+    "login_page": {
+        "title": "Spektral Veritabanı",
+        "email_hint": "E-Posta",
+        "password_hint": "Şifre",
+        "login_button": "Giriş",
+        "forgot_password": "Şifremi Unuttum",
+        "register": "Kayıt Ol"
+    },
+    "register_page": {
+        "title": "Kayıt Ol",
+        "email_hint": "E-Posta",
+        "password_hint": "Şifre",
+        "retype_hint": "Şifre Tekrarı",
+        "company_hint": "Şirket",
+        "register_button": "Kayıt Ol"
+    },
+    "forgot_page": {
+        "email_hint": "E-mail",
+        "mail_required": "Mail girilmelidir.",
+        "reset_button": "Sıfırla"
+    },
+    "admin_mainpage": {
+        "registered_users": "Kayıtlı Kullanıcılar",
+        "total_files": "Toplam Dosya",
+        "total_folders": "Toplam Klasör",
+        "file_category_ratios": "Dosya Kategori Oranları"
+    },
+    "admin_user_management": {
+        "add_user": "Kullanıcı Ekle",
+        "edit_user": "Kullanıcı Düzenle",
+        "search_users": "Kullanıcı Ara",
+        "company": "Şirket",
+        "password": "Şifre",
+        "user_type": "Kullanıcı Tipi",
+        "cancel": "İptal",
+        "save": "Kaydet",
+        "delete_user": "Kullanıcı Sil",
+        "delete_user_question": "Bu kullanıcıyı silmek istediğinize emin misiniz? '{email}'?",
+        "user_updated": "Kullanıcı '{email}' artık {status}.",
+        "confirmed": "onaylı",
+        "not_confirmed": "onaylı değil",
+        "type_admin": "Admin",
+        "type_moderator": "Moderatör",
+        "type_user": "Kullanıcı"
+    },
+    "admin_category_management": {
+        "search_categories": "Kategorileri Ara",
+        "add_category": "Kategori Ekle",
+        "edit_category": "Kategoriyi Düzenle",
+        "delete_category": "Kategoriyi Sil",
+        "delete_category_question": "Bu kategoriyi silmek istediğinize emin misiniz? '{categoryName}'?",
+        "category_name_tr": "Kategori Adı (TR)",
+        "category_name_en": "Kategori Adı (EN)",
+        "cancel": "İptal",
+        "save": "Kaydet"
+    },
+    "folder_page": {
+        "enter_folder_name": "Klasör Adını Giriniz",
+        "enter_folder_name_hint": "Klasör Adı",
+        "are_you_sure": "Emin misiniz?",
+        "delete_folder": "Klasörü Sil?",
+        "cancel": "İptal",
+        "submit": "Onayla",
+        "create_folder": "Klasör Oluştur"
+    },
+    "upload_file_page": {
+        "select_files": "Dosya Seç",
+        "files_selected": "Dosyalar Seçildi",
+        "no_files_selected": "Dosya Seçilmedi",
+        "original_filename": "Orijinal Dosya Adı",
+        "desired_filename": "İstenen Dosya Adı",
+        "description": "Açıklama",
+        "category": "Kategori",
+        "subcategory": "Alt Kategori",
+        "folder": "Klasör",
+        "upload": "Yükle",
+        "please_select_folder": "Lütfen bir klasör seçiniz.",
+        "please_provide_filenames": "Seçilen tüm dosyalar için istenilen dosya adlarını giriniz.",
+        "please_provide_descriptions": "Seçilen tüm dosyalar için açıklamaları giriniz.",
+        "please_select_category": "Lütfen bir kategori seçiniz.",
+        "please_select_subcategory": "Lütfen bir alt kategori seçiniz.",
+        "please_select_files": "Lütfen yüklemek için en az bir dosya seçiniz.",
+        "files_uploaded_successfully": "Dosyalar başarıyla yüklendi!",
+        "validation_error": "Doğrulama Hatası",
+        "ok": "Tamam"
+    },
+    "user_mainpage": {
+        "your_files": "Dosyalarınız",
+        "shared_files": "Paylaşılan Dosyalar",
+        "public_files": "Herkese Açık Dosyalar",
+        "no_files": "Gösterilecek dosya yok.",
+        "file_deleted": "Dosya başarıyla silindi.",
+        "file_is_now": "Dosya '{filename}' artık {status}.",
+        "public": "herkese açık",
+        "private": "özel",
+        "file_shared": "Dosya '{filename}' başarıyla paylaşıldı.",
+        "search_users": "Kullanıcıları Ara",
+        "no_users_found": "Kullanıcı bulunamadı.",
+        "no_files_selected": "Grafik çizimi için dosya seçilmedi.",
+        "draw_plots": "Grafik Çiz"
+    },
+    "general": {
+        "email_required": "E-Posta adresi gerekli.",
+        "password_required": "Şifre girilmelidir.",
+        "password_mismatch": "Şifreler aynı değil.",
+        "company_required": "Şirket adı girilmelidir.",
+        "success": "Başarılı",
+        "success_message": "Şifre sıfırlama başarılı",
+        "failed": "Başarısız",
+        "yes": "Evet",
+        "no": "Hayır",
+        "ok": "Tamam"
+    },
+    "user_container": {
+        "mainpage": "Ana Sayfa",
+        "upload_file": "Dosya Yükle",
+        "folders": "Klasörler"
+    }
+}

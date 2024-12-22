@@ -55,6 +55,33 @@ class _DrawPlotPageState extends State<DrawPlotPage> {
       return lineBarsData;
     }
 
+    // Helper methods to compute minY and maxY
+    double _getMinY() {
+      double minY = double.infinity;
+      for (var file in widget.selectedFiles) {
+        for (var dataPoint in file.dataPoints) {
+          if (dataPoint.y < minY) {
+            minY = dataPoint.y;
+          }
+        }
+      }
+      // Add padding (e.g., 10% of the range)
+      return minY.isFinite ? minY * 0.9 : 0;
+    }
+
+    double _getMaxY() {
+      double maxY = -double.infinity;
+      for (var file in widget.selectedFiles) {
+        for (var dataPoint in file.dataPoints) {
+          if (dataPoint.y > maxY) {
+            maxY = dataPoint.y;
+          }
+        }
+      }
+      // Add padding (e.g., 10% of the range)
+      return maxY.isFinite ? maxY * 1.1 : 1;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Interactive Plot'),
@@ -72,31 +99,65 @@ class _DrawPlotPageState extends State<DrawPlotPage> {
                   scaleEnabled: true,
                   minScale: _minScale,
                   maxScale: _maxScale,
+                  boundaryMargin: const EdgeInsets.all(20), // Allows expansion
                   onInteractionUpdate: (details) {
                     setState(() {
                       _currentScale = details.scale;
                     });
                   },
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: LineChart(
-                        LineChartData(
-                          lineBarsData: getLineBarsData(),
-                          titlesData: FlTitlesData(
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: true),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: true),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: LineChart(
+                      LineChartData(
+                        minY: _getMinY(),
+                        maxY: _getMaxY(),
+                        lineBarsData: getLineBarsData(),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 50, // Increased reserved size
+                              interval: (_getMaxY() - _getMinY()) / 5,
+                              getTitlesWidget: (value, meta) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: Text(
+                                    value.toStringAsFixed(1),
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 12, // Increased font size
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                          gridData: const FlGridData(show: true),
-                          borderData: FlBorderData(
-                            show: true,
-                            border: Border.all(color: Colors.black26),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 50, // Increased reserved size
+                              interval: 1,
+                              getTitlesWidget: (value, meta) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    value.toStringAsFixed(1),
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 12, // Increased font size
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
+                        gridData: const FlGridData(show: true),
+                        borderData: FlBorderData(
+                          show: true,
+                          border: Border.all(color: Colors.black26),
+                        ),
+                        clipData: FlClipData.all(),
                       ),
                     ),
                   ),
@@ -156,6 +217,7 @@ class _DrawPlotPageState extends State<DrawPlotPage> {
   void _resetZoom() {
     setState(() {
       _currentScale = 1.0;
+      // Resetting minScale and maxScale to initial values
       _minScale = 1.0;
       _maxScale = 5.0;
     });

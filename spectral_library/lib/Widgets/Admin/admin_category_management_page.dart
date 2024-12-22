@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:spectral_library/Controllers/category_controller.dart';
 import 'package:spectral_library/Models/category.dart';
 import 'package:spectral_library/Models/user.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class AdminCategoryManagementPage extends StatefulWidget {
   final User user;
 
-  AdminCategoryManagementPage(this.user, {super.key});
+  const AdminCategoryManagementPage(this.user, {super.key});
 
   @override
   _AdminCategoryManagementPageState createState() =>
@@ -16,7 +17,7 @@ class AdminCategoryManagementPage extends StatefulWidget {
 class _AdminCategoryManagementPageState
     extends State<AdminCategoryManagementPage> {
   List<Category> categories = [];
-  TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
   List<Category> filteredCategories = [];
   bool isLoading = true;
 
@@ -28,7 +29,7 @@ class _AdminCategoryManagementPageState
 
   Future<void> _fetchCategories() async {
     setState(() => isLoading = true);
-    var response = await CategoryController.getCategories(widget.user);
+    final response = await CategoryController.getCategories(widget.user);
     if (response.isSuccess) {
       categories = (response.body as List<dynamic>)
           .map((x) => Category.fromMap(x))
@@ -62,49 +63,61 @@ class _AdminCategoryManagementPageState
             TextEditingController(text: category?.categoryNameEn ?? "");
 
         return AlertDialog(
-          title: Text(category == null ? "Add Category" : "Edit Category"),
+          title: Text(
+            category == null
+                ? "admin_category_management.add_category".tr()
+                : "admin_category_management.edit_category".tr(),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameTrController,
-                decoration: InputDecoration(labelText: "Category Name (TR)"),
+                decoration: InputDecoration(
+                  labelText: "admin_category_management.category_name_tr".tr(),
+                ),
               ),
               TextField(
                 controller: nameEnController,
-                decoration: InputDecoration(labelText: "Category Name (EN)"),
+                decoration: InputDecoration(
+                  labelText: "admin_category_management.category_name_en".tr(),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              child: Text("admin_category_management.cancel".tr()),
             ),
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
                 if (category == null) {
-                  var newCategory = Category(
+                  final newCategory = Category(
                     categoryNameTr: nameTrController.text,
                     categoryNameEn: nameEnController.text,
                   );
-                  var response = await CategoryController.addCategory(
+                  final response = await CategoryController.addCategory(
                       widget.user, newCategory);
                   if (response.isSuccess) {
-                    setState(() => _fetchCategories());
+                    _fetchCategories();
+                    setState(() {});
                   }
                 } else {
+                  var oldCatNameTr = category.categoryNameTr;
+                  var oldCatNameEn = category.categoryNameEn;
                   category.categoryNameTr = nameTrController.text;
                   category.categoryNameEn = nameEnController.text;
-                  var response = await CategoryController.updateCategory(
-                      widget.user, category);
+                  final response = await CategoryController.updateCategory(
+                      widget.user, category, oldCatNameTr, oldCatNameEn);
                   if (response.isSuccess) {
-                    setState(() => _fetchCategories());
+                    _fetchCategories();
+                    setState(() {});
                   }
                 }
               },
-              child: const Text("Save"),
+              child: Text("admin_category_management.save".tr()),
             ),
           ],
         );
@@ -116,24 +129,28 @@ class _AdminCategoryManagementPageState
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Delete Category"),
+        title: Text("admin_category_management.delete_category".tr()),
         content: Text(
-            "Are you sure you want to delete the category '${category.categoryNameTr}'?"),
+          "admin_category_management.delete_category_question".tr(
+            namedArgs: {"categoryName": category.categoryNameTr},
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text("admin_category_management.cancel".tr()),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              var response = await CategoryController.deleteCategory(
+              final response = await CategoryController.deleteCategory(
                   widget.user, category);
               if (response.isSuccess) {
-                setState(() => _fetchCategories());
+                _fetchCategories();
+                setState(() {});
               }
             },
-            child: const Text("Delete"),
+            child: Text("admin_category_management.delete_category".tr()),
           ),
         ],
       ),
@@ -167,10 +184,11 @@ class _AdminCategoryManagementPageState
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
+            // "Search Categories"
             TextField(
               controller: searchController,
               decoration: InputDecoration(
-                labelText: "Search Categories",
+                labelText: "admin_category_management.search_categories".tr(),
                 prefixIcon: const Icon(Icons.search),
                 border: const OutlineInputBorder(),
               ),
@@ -181,9 +199,8 @@ class _AdminCategoryManagementPageState
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ListView(
-                      children: filteredCategories
-                          .map((category) => _buildCategoryItem(category))
-                          .toList(),
+                      children:
+                          filteredCategories.map(_buildCategoryItem).toList(),
                     ),
             ),
           ],

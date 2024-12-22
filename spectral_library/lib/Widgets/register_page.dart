@@ -4,6 +4,7 @@ import 'package:spectral_library/Models/response.dart';
 import 'package:spectral_library/Models/user.dart';
 import 'package:spectral_library/Models/user_type.dart';
 import 'package:spectral_library/util.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -13,182 +14,245 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  var mailController = TextEditingController();
-  var passwordController = TextEditingController();
-  var retypePasswordController = TextEditingController();
-  var companyController = TextEditingController();
+  // Text controllers
+  final mailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final retypePasswordController = TextEditingController();
+  final companyController = TextEditingController();
 
+  // Form key
   final formKey = GlobalKey<FormState>();
 
-  void register(BuildContext context, String mail, String password,
+  // List of supported locales for language switching
+  final List<Locale> locales = const [Locale('en'), Locale('tr')];
+
+  /// Register logic
+  Future<void> register(BuildContext context, String mail, String password,
       String passwordCheck, String company) async {
     User newUser = User(
-        email: mail,
-        password: password,
-        company: company,
-        type: UserType.user,
-        isConfirmed: false);
+      email: mail,
+      password: Util.calculateMD5(password),
+      company: company,
+      type: UserType.user,
+      isConfirmed: false,
+    );
+
     Response response = await UserController.register(newUser);
     if (response.isSuccess) {
-      Util.showInfoDialog(context: context, content: response.body);
+      // Make sure to await the showInfoDialog call
+      await Util.showInfoDialog(context: context, content: response.message!);
+
+      // Check if the widget is still mounted (user hasn’t navigated away),
+      // then pop this register page
+      if (!mounted) return;
+      Navigator.pop(context);
     } else {
+      // Show error dialog on failure
       Util.showErrorDialog(context: context, content: response.message!);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentLocale = context.locale;
+
     return Scaffold(
+      appBar: AppBar(
+        title: Text("register_page.title".tr()),
+        actions: [
+          // Row of flags
+          Row(
+            children: [
+              // US Flag
+              InkWell(
+                onTap: () => context.setLocale(const Locale('en')),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: currentLocale.languageCode == 'en'
+                          ? Colors.blue
+                          : Colors.transparent,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Image.asset(
+                    'assets/images/flags/en.png',
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
+              ),
+              // Turkish Flag
+              InkWell(
+                onTap: () => context.setLocale(const Locale('tr')),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: currentLocale.languageCode == 'tr'
+                          ? Colors.blue
+                          : Colors.transparent,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Image.asset(
+                    'assets/images/flags/tr.png',
+                    width: 40,
+                    height: 40,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: Form(
         key: formKey,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
-              child: Image.asset(
-                "assets/images/logo.png",
-                height: 150,
-                width: 150,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Logo
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 24),
+                child: Image.asset(
+                  "assets/images/logo.png",
+                  height: 100,
+                  width: 100,
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
+
+              // E-Mail field
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
                   color: Colors.white,
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextFormField(
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Mail girilmelidir.'; //Todo: multilingual
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.perm_identity),
-                  hintText: "E-Mail",
-                  border: InputBorder.none,
-                  counterText: "",
+                child: TextFormField(
+                  controller: mailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "errors.email_required".tr();
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    icon: const Icon(Icons.email),
+                    hintText: "register_page.email_hint".tr(),
+                    border: InputBorder.none,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                controller: mailController,
               ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
+
+              // Password field
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
                   color: Colors.white,
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextFormField(
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Şifre girilmelidir.'; //Todo: multilingual
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.perm_identity),
-                  hintText: "Password",
-                  border: InputBorder.none,
-                  counterText: "",
+                child: TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "errors.password_required".tr();
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    icon: const Icon(Icons.lock),
+                    hintText: "register_page.password_hint".tr(),
+                    border: InputBorder.none,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                controller: passwordController,
               ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
+
+              // Re-type Password field
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
                   color: Colors.white,
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextFormField(
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Şifre girilmelidir.'; //Todo: multilingual
-                  } else if (value != passwordController.text) {
-                    return 'Şifre alanları aynı değil';
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.perm_identity),
-                  hintText: "Re-type Password",
-                  border: InputBorder.none,
-                  counterText: "",
+                child: TextFormField(
+                  controller: retypePasswordController,
+                  obscureText: true,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "errors.password_required".tr();
+                    } else if (value != passwordController.text) {
+                      return "errors.password_mismatch".tr();
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    icon: const Icon(Icons.lock_reset),
+                    hintText: "register_page.retype_hint".tr(),
+                    border: InputBorder.none,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                controller: retypePasswordController,
               ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
+
+              // Company field
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                decoration: BoxDecoration(
                   color: Colors.white,
+                  border: Border.all(color: Colors.white),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextFormField(
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Şifre girilmelidir.'; //Todo: multilingual
-                  }
-                  return null;
-                },
-                decoration: const InputDecoration(
-                  icon: Icon(Icons.perm_identity),
-                  hintText: "Company",
-                  border: InputBorder.none,
-                  counterText: "",
+                child: TextFormField(
+                  controller: companyController,
+                  keyboardType: TextInputType.text,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "errors.company_required".tr();
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    icon: const Icon(Icons.business),
+                    hintText: "register_page.company_hint".tr(),
+                    border: InputBorder.none,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                style: Theme.of(context).textTheme.bodyMedium,
-                controller: companyController,
               ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  register(
+
+              // Register button
+              ElevatedButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    register(
                       context,
                       mailController.text,
                       passwordController.text,
                       retypePasswordController.text,
-                      companyController.text);
-                }
-              },
-              style: Theme.of(context).elevatedButtonTheme.style,
-              child: Text("Kayıt Ol",
-                  style: Theme.of(context).textTheme.labelLarge),
-            ),
-          ],
+                      companyController.text,
+                    );
+                  }
+                },
+                child: Text(
+                  "register_page.register_button".tr(),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
