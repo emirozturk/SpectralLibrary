@@ -16,7 +16,7 @@ SECRET_KEY = "spectralsecretkeywithemirozturk"
 
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/spectraldb"
+app.config["MONGO_URI"] = "mongodb+srv://spectraldbuser:HwqKZrQrcYVJrhbT@cluster0.xi3lw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0/spectraldb"
 mongo = PyMongo(app)
 CORS(app,resources={r"/*":{"origins":"*"}})
 
