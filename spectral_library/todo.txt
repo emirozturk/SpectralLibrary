@@ -1,2 +1,0 @@
-Filtreleme çalışmıyor
-Grafik çizdirme zoom in ve detaylar
