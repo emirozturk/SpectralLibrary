@@ -1,7 +1,7 @@
 # app.py
 from flask import Flask
 from config import Config
-from models import Base  # This ensures all models are imported.
+from models.models import Base
 from utils.db import engine
 from routes import category_routes, user_routes
 

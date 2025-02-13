@@ -2,7 +2,7 @@
 from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 from utils.db import get_session
-from models.category import Category
+from models.models import Category
 
 category_bp = Blueprint("category_bp", __name__, url_prefix="/categories")
 

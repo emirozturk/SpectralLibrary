@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 from utils.db import get_session
-from models.user import User
+from models.models import User
 
 user_bp = Blueprint("user_bp", __name__, url_prefix="/users")
 
