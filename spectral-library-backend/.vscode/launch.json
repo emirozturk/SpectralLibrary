@@ -13,5 +13,8 @@
         "--no-reload"
     ],
     "jinja": true,
-    "justMyCode": true
+    "justMyCode": true,
+    "configurations": [
+    
+    ]
 }

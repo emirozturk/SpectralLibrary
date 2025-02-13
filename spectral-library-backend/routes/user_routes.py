@@ -2,10 +2,12 @@ from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 from utils.db import get_session
 from models.models import User
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 user_bp = Blueprint("user_bp", __name__, url_prefix="/users")
 
 @user_bp.get("/")
+@jwt_required()
 def get_users():
     session = get_session()
     try:
@@ -24,6 +26,7 @@ def get_users():
         session.close()
 
 @user_bp.get("/<int:user_id>")
+@jwt_required()
 def get_user(user_id):
     session = get_session()
     try:
@@ -42,5 +45,3 @@ def get_user(user_id):
         return jsonify(result), 200
     finally:
         session.close()
-
-# Additional endpoints (POST, update, delete) for users can be added here following a similar pattern.
