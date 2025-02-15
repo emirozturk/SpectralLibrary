@@ -1,11 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { post } from '../../lib/fetch-api'
+import { useRouter } from 'vue-router'
 
 const email = ref('')
 const message = ref(null)
 const error = ref(null)
 const loading = ref(false)
+const router = useRouter()
 
 const handleSubmit = async (e) => {
   e.preventDefault()
@@ -14,10 +16,11 @@ const handleSubmit = async (e) => {
   message.value = null
 
   try {
-    const response = await post('user/forgot-password', { email: email.value })
+    const response = await post('users/forgot-password', { email: email.value })
 
-    if (response.is_success) {
-      message.value = 'Password reset link has been sent to your email.'
+    if (response.isSuccess) {
+      message.value = response.message
+      router.push("/login")
     } else {
       error.value = response.message || 'Request failed'
     }

@@ -6,21 +6,27 @@ from models.models import Category
 
 category_bp = Blueprint("category_bp", __name__, url_prefix="/categories")
 
-@category_bp.get("/")
+@category_bp.get("")
 def get_categories():
     session = get_session()
     try:
         categories = session.query(Category).all()
-        result = [{
-            'id': c.id,
-            'name_en': c.name_en,
-            'name_tr': c.name_tr,
-            'created_at': c.created_at.isoformat() if c.created_at else None,
-            'deleted_at': c.deleted_at.isoformat() if c.deleted_at else None,
-        } for c in categories]
-        return jsonify(result), 200
+        result = jsonify({
+            "isSuccess": True,
+            "body": {
+                categories: [{
+                    'id': c.id,
+                    'name_en': c.name_en,
+                    'name_tr': c.name_tr,
+                    'created_at': c.created_at.isoformat() if c.created_at else None,
+                    'deleted_at': c.deleted_at.isoformat() if c.deleted_at else None,
+                } for c in categories]
+            }
+        }), 200
+        return result
     finally:
         session.close()
+
 
 @category_bp.get("/<int:category_id>")
 def get_category(category_id):
@@ -29,18 +35,21 @@ def get_category(category_id):
         category = session.query(Category).filter(Category.id == category_id).first()
         if not category:
             abort(404, description="Category not found")
-        result = {
-            'id': category.id,
-            'name_en': category.name_en,
-            'name_tr': category.name_tr,
-            'created_at': category.created_at.isoformat() if category.created_at else None,
-            'deleted_at': category.deleted_at.isoformat() if category.deleted_at else None,
-        }
+        result = jsonify({
+            'isSuccess': True,
+            'body': {
+                'id': category.id,
+                'name_en': category.name_en,
+                'name_tr': category.name_tr,
+                'created_at': category.created_at.isoformat() if category.created_at else None,
+                'deleted_at': category.deleted_at.isoformat() if category.deleted_at else None,
+            }
+        }), 200
         return jsonify(result), 200
     finally:
         session.close()
 
-@category_bp.post("/")
+@category_bp.post("")
 def create_category():
     name_en = request.form.get("name_en")
     name_tr = request.form.get("name_tr")

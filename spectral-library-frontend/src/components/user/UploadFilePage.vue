@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { post } from '../../../lib/fetch-api'
+import { postWithToken } from '../../../lib/fetch-api'
 
 const files = ref([])
 const category = ref('')

@@ -26,14 +26,10 @@ const handleSubmit = async (e) => {
     const user = {
       email: email.value,
       password: calculateMD5(password.value),
-      is_confirmed: false,
-      type: "user",
       company: company.value,
-      id: -1,
-      created_at: new Date(),
     }
-    const response = await post("user/register", user)
-    if (response.is_success) {
+    const response = await post("users/register", user)
+    if (response.isSuccess) {
       router.push("/login")
     } else {
       error.value = response.message || "Registration failed"

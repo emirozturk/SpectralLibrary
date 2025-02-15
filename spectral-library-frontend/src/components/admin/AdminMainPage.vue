@@ -1,27 +1,34 @@
 <script setup>
-import { ref } from 'vue'
+import { ref ,onMounted} from 'vue'
 import {
   UserIcon,
   FolderIcon,
   DocumentIcon
 } from '@heroicons/vue/24/solid'
+import { getAllWithToken } from '../../../lib/fetch-api'
 
 // Mock Data
-const registeredUsers = ref(150)
-const totalFiles = ref(1200)
-const totalFolders = ref(300)
+const registeredUsers = ref()
+const totalFiles = ref()
+const totalFolders = ref()
+const fileCategoryRatios = ref([])
 
-const fileCategoryRatios = ref([
-  { name: 'Category 1', ratio: 40 },
-  { name: 'Category 2', ratio: 35 },
-  { name: 'Category 3', ratio: 25 }
-])
+
+onMounted(async () => {
+  const response = await getAllWithToken("dashboard", null);
+  if(response.isSuccess){
+    registeredUsers.value = response.body.user_count;
+    totalFiles.value = response.body.total_files;
+    totalFolders.value = response.body.total_folders;
+    fileCategoryRatios.value = response.body.category_file_ratios;
+  }
+});
 </script>
 
 <template>
   <div class="p-8 max-w-7xl mx-auto bg-blue-50 shadow-md rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-4xl font-bold text-blue-700 text-center">
-      Admin Dashboard
+      Dashboard
     </h1>
 
     <!-- Overview Section -->
