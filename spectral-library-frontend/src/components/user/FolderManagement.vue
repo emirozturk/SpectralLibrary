@@ -1,29 +1,65 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getAllWithToken, postWithToken, putWithToken, delWithToken } from '../../../lib/fetch-api'
 
-const folders = ref(['Folder 1', 'Folder 2'])
+// Reactive state for folders and the new folder name.
+const folders = ref([])
 const newFolder = ref('')
 
-const addFolder = () => {
+// Helper: Fetch folders from the backend.
+const fetchFolders = async () => {
+  const response = await getAllWithToken("folders", null)
+  if (response.isSuccess) {
+    folders.value = response.body
+  } else {
+    alert(response.message)
+  }
+}
+
+onMounted(async () => {
+  await fetchFolders()
+})
+
+
+const addFolder = async () => {
   if (newFolder.value.trim() === '') {
     alert('Folder name cannot be empty.')
     return
   }
-  folders.value.push(newFolder.value.trim())
-  newFolder.value = ''
-}
-
-const deleteFolder = (index) => {
-  if (window.confirm('Are you sure you want to delete this folder?')) {
-    folders.value = folders.value.filter((_, i) => i !== index)
+  const newFolderData = { name: newFolder.value.trim() }
+  const response = await postWithToken("folders", newFolderData)
+  if (response.isSuccess) {
+    newFolder.value = ''
+    await fetchFolders()
+  } else {
+    alert(response.message)
   }
 }
 
-const renameFolder = (index) => {
-  const currentName = folders.value[index]
+// Handler: Delete a folder.
+const deleteFolder = async (folderId) => {
+  if (window.confirm('Are you sure you want to delete this folder?')) {
+    const response = await delWithToken("folders", folderId)
+    if (response.isSuccess) {
+      await fetchFolders()
+    } else {
+      alert(response.message)
+    }
+  }
+}
+
+// Handler: Rename a folder.
+const renameFolder = async (folder) => {
+  const currentName = folder.name
   const newName = prompt('Enter the new folder name:', currentName)
   if (newName && newName.trim() !== '') {
-    folders.value[index] = newName.trim()
+    const updatedFolder = { id: folder.id, name: newName.trim() }
+    const response = await putWithToken("folders", updatedFolder)
+    if (response.isSuccess) {
+      await fetchFolders()
+    } else {
+      alert(response.message)
+    }
   } else {
     alert('Folder name cannot be empty.')
   }
@@ -56,20 +92,20 @@ const renameFolder = (index) => {
     <!-- Folders List -->
     <ul class="space-y-4">
       <li
-        v-for="(folder, index) in folders"
-        :key="index"
+        v-for="folder in folders"
+        :key="folder.id"
         class="flex justify-between items-center p-4 bg-blue-100 rounded-md"
       >
-        <span class="text-lg font-medium text-blue-800">{{ folder }}</span>
+        <span class="text-lg font-medium text-blue-800">{{ folder.name }}</span>
         <div class="flex space-x-2">
           <button
-            @click="renameFolder(index)"
+            @click="renameFolder(folder)"
             class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 transition-colors"
           >
             Rename
           </button>
           <button
-            @click="deleteFolder(index)"
+            @click="deleteFolder(folder.id)"
             class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
           >
             Delete
@@ -82,6 +118,3 @@ const renameFolder = (index) => {
     </ul>
   </div>
 </template>
-
-<style scoped>
-</style>

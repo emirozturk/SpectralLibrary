@@ -45,7 +45,7 @@ export async function postWithToken(route, object) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replace("\"", "")}`,
+      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
     },
     body: JSON.stringify(object),
   });
@@ -68,7 +68,7 @@ export async function putWithToken(route, object) {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replace("\"", "")}`,
+      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
     },
     body: JSON.stringify(object),
   });
@@ -80,7 +80,7 @@ export async function delWithToken(route, id) {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replace("\"", "")}`,
+      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
     },
   });
   return await response.json();

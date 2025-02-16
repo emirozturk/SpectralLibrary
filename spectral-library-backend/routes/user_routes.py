@@ -12,7 +12,7 @@ user_bp = Blueprint("user_bp", __name__, url_prefix="/users")
 def get_users():
     session = get_session()
     try:
-        users = session.query(User).all()
+        users = session.query(User).filter(User.deleted_at==None).all()
         result = jsonify({
             "isSuccess": True,
             "body": [{
@@ -85,6 +85,7 @@ def add_user():
 
 
 @user_bp.post("")
+@jwt_required()
 def add_user_admin():
     session = get_session()
     try:
@@ -112,6 +113,7 @@ def add_user_admin():
         session.close()
 
 @user_bp.put("")
+@jwt_required()
 def update_user():
     session = get_session()
     try:
@@ -176,7 +178,7 @@ def delete_user(user_id):
         user = session.query(User).filter(User.id == user_id).first()
         if not user:
             abort(404, description="User not found")
-        session.delete(user)
+        user.deleted_at = datetime.now()
         session.commit()
         return jsonify({
             "isSuccess": True,
