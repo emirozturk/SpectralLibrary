@@ -26,7 +26,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-8 max-w-7xl mx-auto bg-blue-50 shadow-md rounded-lg min-h-screen flex flex-col space-y-8">
+  <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-4xl font-bold text-blue-700 text-center">
       Dashboard
     </h1>
@@ -34,7 +34,7 @@ onMounted(async () => {
     <!-- Overview Section -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Registered Users -->
-      <div class="flex items-center p-6 bg-blue-100 rounded-lg shadow">
+      <div class="flex items-center p-6 bg-white border border-gray-200 rounded-lg">
         <UserIcon class="h-12 w-12 text-blue-500 mr-4" />
         <div>
           <p class="text-lg font-semibold text-blue-700">Registered Users</p>
@@ -43,7 +43,7 @@ onMounted(async () => {
       </div>
 
       <!-- Total Files -->
-      <div class="flex items-center p-6 bg-blue-100 rounded-lg shadow">
+      <div class="flex items-center p-6 bg-white border border-gray-200 rounded-lg">
         <DocumentIcon class="h-12 w-12 text-blue-500 mr-4" />
         <div>
           <p class="text-lg font-semibold text-blue-700">Total Files</p>
@@ -52,7 +52,7 @@ onMounted(async () => {
       </div>
 
       <!-- Total Folders -->
-      <div class="flex items-center p-6 bg-blue-100 rounded-lg shadow">
+      <div class="flex items-center p-6 bg-white border border-gray-200 rounded-lg">
         <FolderIcon class="h-12 w-12 text-blue-500 mr-4" />
         <div>
           <p class="text-lg font-semibold text-blue-700">Total Folders</p>
@@ -62,7 +62,7 @@ onMounted(async () => {
     </div>
 
     <!-- File Category Ratios Section -->
-    <div class="bg-white p-6 rounded-lg shadow">
+    <div class="bg-white p-6 rounded-lg border border-gray-200">
       <h2 class="text-2xl font-semibold text-blue-700 mb-4">
         File Category Ratios
       </h2>
@@ -72,7 +72,8 @@ onMounted(async () => {
             <span class="text-base font-medium text-blue-700">{{ category.name }}</span>
             <span class="text-base font-medium text-blue-700">{{ category.ratio }}%</span>
           </div>
-          <div class="w-full bg-blue-200 rounded-full h-4">
+          <!-- Progress Bar: track is white -->
+          <div class="w-full h-4 rounded-full bg-white">
             <div
               class="bg-blue-600 h-4 rounded-full"
               :style="{ width: `${category.ratio}%` }"

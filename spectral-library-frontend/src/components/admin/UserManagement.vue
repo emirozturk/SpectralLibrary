@@ -21,7 +21,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/vue/24/solid";
-import { post, putWithToken, delWithToken, getAllWithToken } from '../../../lib/fetch-api';
+import {putWithToken, delWithToken, getAllWithToken, postWithToken } from '../../../lib/fetch-api';
 
 // --- Reactive State ---
 const users = ref([]);
@@ -73,7 +73,7 @@ const handleAddUser = async () => {
     is_confirmed: false,
     userType: newUserType.value,
   };
-  const response = await post("users", newUser);
+  const response = await postWithToken("users", newUser);
   if (response.isSuccess) {
     newUserEmail.value = "";
     newUserCompany.value = "";
@@ -167,7 +167,7 @@ const filteredUsers = computed(() => {
 </script>
 
 <template>
-  <div class="p-8 max-w-7xl mx-auto bg-blue-50 shadow-md rounded-lg min-h-screen flex flex-col">
+  <div class="p-8 max-w-7xl mx-auto bg-white-50 rounded-lg min-h-screen flex flex-col">
     <h1 class="text-4xl font-bold text-blue-700 mb-6 text-center">User Management</h1>
 
     <!-- Search Bar -->
@@ -198,7 +198,7 @@ const filteredUsers = computed(() => {
           <li
             v-for="user in filteredUsers"
             :key="user.id"
-            class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-blue-200 rounded-lg shadow-sm bg-white"
+            class="flex flex-col md:flex-row items-start md:items-center justify-between p-4 border border-blue-200 rounded-lg bg-white"
           >
             <!-- User Information -->
             <div class="flex-1">
@@ -279,7 +279,7 @@ const filteredUsers = computed(() => {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-md transform overflow-hidden rounded-2xl bg-blue-50 p-6 text-left align-middle shadow-xl transition-all"
+                class="w-full max-w-md transform overflow-hidden rounded-2xl bg-blue-50 p-6 text-left align-middle transition-all"
               >
                 <DialogTitle class="text-lg font-medium leading-6 text-blue-700">
                   Add New User
@@ -307,37 +307,32 @@ const filteredUsers = computed(() => {
                           <ChevronUpDownIcon class="h-5 w-5 text-blue-400" />
                         </span>
                       </ListboxButton>
-                      <TransitionChild
-                        as="template"
-                        leave="transition ease-in duration-100"
-                        leave-from="opacity-100"
-                        leave-to="opacity-0"
+                      <ListboxOptions
+                        class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base ring-1 ring-blue-500 ring-opacity-5 focus:outline-none sm:text-sm"
                       >
-                        <ListboxOptions
-                          class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-blue-500 ring-opacity-5 focus:outline-none sm:text-sm"
+                        <ListboxOption
+                          v-for="(type, idx) in userTypes"
+                          :key="idx"
+                          :value="type"
+                          v-slot="{ active, selected }"
                         >
-                          <ListboxOption
-                            v-for="(type, idx) in userTypes"
-                            :key="idx"
-                            :value="type"
-                            v-slot="{ active, selected }"
+                          <div
+                            :class="`relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-blue-900'}`"
                           >
-                            <div
-                              :class="`relative cursor-pointer select-none py-2 pl-10 pr-4 ${active ? 'bg-blue-600 text-white' : 'text-blue-900'}`"
+                            <span
+                              :class="`block truncate ${selected ? 'font-medium' : 'font-normal'}`"
                             >
-                              <span :class="`block truncate ${selected ? 'font-medium' : 'font-normal'}`">
-                                {{ type }}
-                              </span>
-                              <span
-                                v-if="selected"
-                                :class="`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`"
-                              >
-                                <CheckIcon class="h-5 w-5" />
-                              </span>
-                            </div>
-                          </ListboxOption>
-                        </ListboxOptions>
-                      </TransitionChild>
+                              {{ type }}
+                            </span>
+                            <span
+                              v-if="selected"
+                              :class="`absolute inset-y-0 left-0 flex items-center pl-3 ${active ? 'text-white' : 'text-blue-600'}`"
+                            >
+                              <CheckIcon class="h-5 w-5" />
+                            </span>
+                          </div>
+                        </ListboxOption>
+                      </ListboxOptions>
                     </div>
                   </Listbox>
                 </div>
@@ -391,7 +386,7 @@ const filteredUsers = computed(() => {
               leave-to="opacity-0 scale-95"
             >
               <DialogPanel
-                class="w-full max-w-md transform overflow-hidden rounded-2xl bg-blue-50 p-6 text-left align-middle shadow-xl transition-all"
+                class="w-full max-w-md transform overflow-hidden rounded-2xl bg-blue-50 p-6 text-left align-middle transition-all"
               >
                 <DialogTitle class="text-lg font-medium leading-6 text-blue-700">
                   Edit User
@@ -421,7 +416,7 @@ const filteredUsers = computed(() => {
                       </ListboxButton>
                       <Transition as="div" leave="transition ease-in duration-100" leave-from="opacity-100" leave-to="opacity-0">
                         <ListboxOptions
-                          class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-blue-500 ring-opacity-5 focus:outline-none sm:text-sm list-none"
+                          class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-none ring-1 ring-blue-500 ring-opacity-5 focus:outline-none sm:text-sm list-none"
                         >
                           <ListboxOption
                             as="li"

@@ -67,7 +67,7 @@ const renameFolder = async (folder) => {
 </script>
 
 <template>
-  <div class="p-8 max-w-3xl mx-auto bg-blue-50 rounded-lg min-h-screen flex flex-col space-y-8">
+  <div class="p-8 max-w-3xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-3xl font-bold text-blue-700 text-center">
       Folder Management
     </h1>
@@ -78,7 +78,7 @@ const renameFolder = async (folder) => {
         type="text"
         v-model="newFolder"
         placeholder="New Folder"
-        class="flex-1 p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="flex-1 p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         @keyup.enter="addFolder"
       />
       <button
@@ -94,7 +94,7 @@ const renameFolder = async (folder) => {
       <li
         v-for="folder in folders"
         :key="folder.id"
-        class="flex justify-between items-center p-4 bg-blue-100 rounded-md"
+        class="flex justify-between items-center p-4 bg-white border border-gray-200 rounded-md"
       >
         <span class="text-lg font-medium text-blue-800">{{ folder.name }}</span>
         <div class="flex space-x-2">

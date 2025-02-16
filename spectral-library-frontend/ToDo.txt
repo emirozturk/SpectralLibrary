@@ -3,3 +3,4 @@
 - Jwt token kontrol edilmeli, user mı admin mi kısmı eklenmeli, id'ler oradan alınabilir
 - Hatalı dosya isim vs kontrolü
 - Temalar
+- confirmed olmayanlar girebiliyor

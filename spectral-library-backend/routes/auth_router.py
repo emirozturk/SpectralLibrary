@@ -8,15 +8,15 @@ auth_bp = Blueprint("auth_bp", __name__, url_prefix="/auth")
 
 @auth_bp.post("/login")
 def login():
-    data = request.get_json()
-    email = data.get("email")
-    password = data.get("password")
-
-    if not email or not password:
-        abort(400, description="Email and password are required.")
-
-    session = get_session()
     try:
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            abort(400, description="Email and password are required.")
+
+        session = get_session()
         user = session.query(User).filter(User.email == email).first()
         if not user or not user.password == password:
             abort(401, description="Invalid credentials")
@@ -34,5 +34,10 @@ def login():
                     "token": access_token
                 }
             }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()

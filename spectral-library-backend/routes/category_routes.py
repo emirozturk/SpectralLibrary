@@ -2,9 +2,9 @@
 from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from utils.db import get_session
-from models.models import Category
+from models.models import Category, User
 
 category_bp = Blueprint("category_bp", __name__, url_prefix="/categories")
 
@@ -12,8 +12,9 @@ category_bp = Blueprint("category_bp", __name__, url_prefix="/categories")
 @category_bp.get("")
 @jwt_required()
 def get_categories():
-    session = get_session()
     try:
+        session = get_session()
+        
         categories = session.query(Category).filter(Category.deleted_at==None).all()
         response = {
             "isSuccess": True,
@@ -38,6 +39,11 @@ def get_categories():
             ]
         }
         return jsonify(response), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -46,8 +52,8 @@ def get_categories():
 @category_bp.get("/<int:category_id>")
 @jwt_required()
 def get_category(category_id):
-    session = get_session()
     try:
+        session = get_session()
         category = session.query(Category).filter(
             Category.id == category_id).first()
         if not category:
@@ -62,6 +68,11 @@ def get_category(category_id):
             }
         }), 200
         return jsonify(result), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -69,13 +80,21 @@ def get_category(category_id):
 @category_bp.post("")
 @jwt_required()
 def create_category():
-    data = request.json
-    name_en = data["name"]
-    #name_tr = request.form.get("name_tr")
-    if not name_en:
-        abort(400, description="Missing required field 'name_en'")
-    session = get_session()
     try:
+        data = request.json
+        name_en = data["name"]
+        if not name_en:
+            abort(400, description="Missing required field 'name_en'")
+        session = get_session()
+
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
+            
         new_category = Category(
             name_en=name_en,
             name_tr=name_en,#name_tr,
@@ -92,6 +111,11 @@ def create_category():
             'deleted_at': new_category.deleted_at.isoformat() if new_category.deleted_at else None,
         }
         return jsonify(result), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -99,10 +123,19 @@ def create_category():
 @category_bp.put("")
 @jwt_required()
 def update_category():
-    data = request.json
-    category_id = data.get('id')
-    session = get_session()
     try:
+        data = request.json
+        category_id = data.get('id')
+        session = get_session()
+
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
+
         category = session.query(Category).filter(
             Category.id == category_id).first()
         if not category:
@@ -118,6 +151,11 @@ def update_category():
             'deleted_at': category.deleted_at.isoformat() if category.deleted_at else None,
         }
         return jsonify(result), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -125,8 +163,17 @@ def update_category():
 @category_bp.delete("/<int:category_id>")
 @jwt_required()
 def delete_category(category_id):
-    session = get_session()
     try:
+        session = get_session()
+
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
+        
         category = session.query(Category).filter(
             Category.id == category_id).first()
         if not category:
@@ -136,5 +183,10 @@ def delete_category(category_id):
         category.deleted_at = datetime.now()
         session.commit()
         return jsonify({"message": "Category deleted"}), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()

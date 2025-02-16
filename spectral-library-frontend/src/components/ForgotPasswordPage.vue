@@ -33,18 +33,20 @@ const handleSubmit = async (e) => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-primary-light">
-    <div class="bg-background p-8 rounded shadow-md w-full max-w-md">
-      <h2 class="text-2xl font-bold text-primary-dark mb-6 text-center">Forgot Password</h2>
-      <div v-if="error" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+  <div class="min-h-screen flex items-center justify-center bg-blue-50">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+      <h2 class="text-3xl font-semibold text-blue-800 mb-6 text-center">
+        Forgot Password
+      </h2>
+      <div v-if="error" class="bg-red-100 text-red-600 p-3 rounded mb-4">
         {{ error }}
       </div>
-      <div v-if="message" class="bg-green-100 text-green-700 p-3 rounded mb-4">
+      <div v-if="message" class="bg-green-100 text-green-600 p-3 rounded mb-4">
         {{ message }}
       </div>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form @submit.prevent="handleSubmit" class="space-y-6">
         <div>
-          <label for="email" class="block text-sm font-medium text-primary-dark">
+          <label for="email" class="block text-sm font-medium text-blue-800">
             Email
           </label>
           <input
@@ -52,21 +54,22 @@ const handleSubmit = async (e) => {
             id="email"
             required
             v-model="email"
-            class="mt-1 block w-full px-3 py-2 border border-primary-dark rounded focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Email"
+            class="mt-1 block w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <button
           type="submit"
           :disabled="loading"
-          class="w-full py-2 px-4 bg-primary hover:bg-primary-dark text-white font-semibold rounded focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ loading ? 'Sending...' : 'Send Reset Link' }}
+          {{ loading ? "Sending..." : "Send Reset Link" }}
         </button>
       </form>
-      <div class="mt-6 text-center">
+      <div class="mt-6 text-center text-sm">
         <p>
           Remembered your password?
-          <RouterLink to="/login" class="text-primary hover:underline">
+          <RouterLink to="/login" class="text-blue-600 hover:underline">
             Login
           </RouterLink>
         </p>

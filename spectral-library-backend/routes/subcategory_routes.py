@@ -2,9 +2,9 @@
 from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from utils.db import get_session
-from models.models import Category,Subcategory
+from models.models import Category,Subcategory, User
 
 subcategory_bp = Blueprint("subcategory_bp", __name__, url_prefix="/subcategories")
 
@@ -12,10 +12,20 @@ subcategory_bp = Blueprint("subcategory_bp", __name__, url_prefix="/subcategorie
 @subcategory_bp.post("")
 @jwt_required()
 def add_subcategory():
-    data = request.json
-    category_id = data.get('categoryId')
-    session = get_session()
     try:
+        data = request.json
+        category_id = data.get('categoryId')
+        session = get_session()
+
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
+        
+
         category = session.query(Category).filter(
             Category.id == category_id).first()
         if not category:
@@ -38,6 +48,11 @@ def add_subcategory():
                 'category_id': new_subcategory.category_id
             }
         }), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -45,10 +60,18 @@ def add_subcategory():
 @subcategory_bp.put("")
 @jwt_required()
 def update_category():
-    data = request.json
-    subcategory_id = data.get('id')
-    session = get_session()
     try:
+        data = request.json
+        subcategory_id = data.get('id')
+        session = get_session()
+
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
         subcategory = session.query(Subcategory).filter(
             Subcategory.id == subcategory_id).first()
         if not subcategory:
@@ -65,6 +88,11 @@ def update_category():
             'deleted_at': subcategory.deleted_at.isoformat() if subcategory.deleted_at else None,
         }
         return jsonify(result), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -72,8 +100,15 @@ def update_category():
 @subcategory_bp.delete("<int:subcategory_id>")
 @jwt_required()
 def delete_subcategory(subcategory_id):
-    session = get_session()
     try:
+        session = get_session()
+        user_email = get_jwt_identity()
+        user = get_session().query(User).filter(User.email == user_email).first()
+        if user.type != "admin":
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
         subcategory = session.query(Subcategory).filter(
             Subcategory.id == subcategory_id).first()
         if not subcategory:
@@ -81,5 +116,10 @@ def delete_subcategory(subcategory_id):
         subcategory.deleted_at = datetime.now()
         session.commit()
         return jsonify({"message": "Subcategory deleted"}), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()

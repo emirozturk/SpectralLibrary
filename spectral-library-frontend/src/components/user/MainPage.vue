@@ -200,35 +200,35 @@ const drawPlot = () => {
 </script>
 
 <template>
-  <div class="p-8 max-w-7xl mx-auto bg-blue-50 rounded-lg min-h-screen flex flex-col space-y-8">
+  <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-4xl font-bold text-blue-700 text-center mb-6">User Main Page</h1>
 
     <!-- Owned Files Collapsible Group with Extra Filters -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-blue-200 rounded-lg">
-          <span>Your Files</span>
-          <span class="text-xl">{{ open ? '-' : '+' }}</span>
+        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+          <span class="text-blue-700 font-medium">Files</span>
+          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
-        <DisclosurePanel class="px-4 py-2">
+        <DisclosurePanel class="px-4 py-2 bg-white">
           <!-- Extra Filter Dropdowns -->
           <div class="flex flex-col md:flex-row gap-4 mb-4">
             <!-- Category Filter -->
-            <select v-model="filterCategory" class="border p-2 rounded">
+            <select v-model="filterCategory" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Categories</option>
               <option v-for="opt in categoryOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
               </option>
             </select>
             <!-- Subcategory Filter -->
-            <select v-model="filterSubcategory" class="border p-2 rounded">
+            <select v-model="filterSubcategory" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Subcategories</option>
               <option v-for="opt in subcategoryOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
               </option>
             </select>
             <!-- Folder Filter -->
-            <select v-model="filterFolder" class="border p-2 rounded">
+            <select v-model="filterFolder" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
               <option value="">All Folders</option>
               <option v-for="opt in folderOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
@@ -236,13 +236,13 @@ const drawPlot = () => {
             </select>
           </div>
           <!-- Search Bar for Owned Files -->
-          <input type="text" v-model="searchFiles" placeholder="Search your files..." class="border p-2 rounded mb-4 w-full" />
+          <input type="text" v-model="searchFiles" placeholder="Search your files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
           <!-- Files List (Modern Card Layout) -->
           <div class="grid gap-4">
             <div
               v-for="file in filteredMyFiles"
               :key="file.id"
-              class="bg-white rounded-lg shadow p-4 flex flex-col md:flex-row justify-between items-center"
+              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center"
             >
               <div>
                 <div class="flex items-center space-x-2">
@@ -281,17 +281,17 @@ const drawPlot = () => {
     <!-- Shared Files Collapsible Group (Modern Card Layout, No Action Buttons) -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-blue-200 rounded-lg">
-          <span>Shared Files</span>
-          <span class="text-xl">{{ open ? '-' : '+' }}</span>
+        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+          <span class="text-blue-700 font-medium">Shared Files</span>
+          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
-        <DisclosurePanel class="px-4 py-2">
-          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..." class="border p-2 rounded mb-4 w-full" />
+        <DisclosurePanel class="px-4 py-2 bg-white">
+          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
           <div class="grid gap-4">
             <div
               v-for="file in filteredSharedFiles"
               :key="file.id"
-              class="bg-white rounded-lg shadow p-4 flex flex-col justify-between items-center"
+              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between items-center"
             >
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedSharedFiles" :value="file" class="mr-2" />
@@ -314,17 +314,17 @@ const drawPlot = () => {
     <!-- Public Files Collapsible Group (Modern Card Layout, No Action Buttons) -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-blue-200 rounded-lg">
-          <span>Public Files</span>
-          <span class="text-xl">{{ open ? '-' : '+' }}</span>
+        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+          <span class="text-blue-700 font-medium">Public Files</span>
+          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
-        <DisclosurePanel class="px-4 py-2">
-          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..." class="border p-2 rounded mb-4 w-full" />
+        <DisclosurePanel class="px-4 py-2 bg-white">
+          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
           <div class="grid gap-4">
             <div
               v-for="file in filteredPublicFiles"
               :key="file.id"
-              class="bg-white rounded-lg shadow p-4 flex flex-col justify-between items-center"
+              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between items-center"
             >
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedPublicFiles" :value="file" class="mr-2" />
@@ -346,7 +346,7 @@ const drawPlot = () => {
 
     <!-- Draw Plot Button -->
     <div class="mt-6">
-      <button @click="drawPlot" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg text-xl font-bold">
+      <button @click="drawPlot" class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
         Draw Plot
       </button>
     </div>

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 export async function getAll(route, id) {
   const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;

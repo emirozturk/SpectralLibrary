@@ -22,7 +22,7 @@ def get_folders():
 
         if not user:
             abort(404, description="User not found.")
-     
+
         folders = [folder for folder in user.folders if folder.deleted_at is None]
 
         response = {
@@ -37,6 +37,11 @@ def get_folders():
             ]
         }
         return jsonify(response), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -74,6 +79,11 @@ def add_folder():
             }
         }
         return jsonify(response), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -109,6 +119,9 @@ def update_folder():
         if not folder:
             abort(404, description="Folder not found.")
 
+        if folder.owner_id != user.id:
+            abort(403, description="You are not authorized to update this folder.")
+
         folder.name = name
         session.commit()
 
@@ -121,6 +134,11 @@ def update_folder():
             }
         }
         return jsonify(response), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -140,6 +158,9 @@ def delete_folder(folder_id):
 
         if not folder_id:
             abort(400, description="Folder id is required.")
+
+        if user_email != user.email:
+            abort(403, description="You are not authorized to access this resource.")
 
         folder = session.query(Folder).filter(
             Folder.id == folder_id,
@@ -165,5 +186,10 @@ def delete_folder(folder_id):
             }
         }
         return jsonify(response), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()

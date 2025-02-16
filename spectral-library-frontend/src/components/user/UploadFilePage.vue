@@ -145,7 +145,7 @@ const handleUpload = async () => {
 </script>
 
 <template>
-  <div class="p-8 max-w-4xl mx-auto bg-blue-50 rounded-lg min-h-screen flex flex-col space-y-8">
+  <div class="p-8 max-w-4xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
     <h2 class="text-3xl font-bold text-blue-700 text-center">Upload Spectral File</h2>
 
     <!-- Error Message -->
@@ -158,7 +158,7 @@ const handleUpload = async () => {
       <!-- Category Dropdown -->
       <div>
         <label class="text-blue-700 block mb-2 font-medium">Category</label>
-        <select v-model="category" class="w-full p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="category" class="w-full p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Select Category</option>
           <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id">
             {{ cat.name_en }}
@@ -169,7 +169,7 @@ const handleUpload = async () => {
       <!-- Subcategory Dropdown (filtered by selected category) -->
       <div>
         <label class="text-blue-700 block mb-2 font-medium">Subcategory</label>
-        <select v-model="subcategory" class="w-full p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="subcategory" class="w-full p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Select Subcategory</option>
           <option v-for="sub in filteredSubcategories" :key="sub.id" :value="sub.id">
             {{ sub.name_en }}
@@ -180,7 +180,7 @@ const handleUpload = async () => {
       <!-- Folder Dropdown -->
       <div>
         <label class="text-blue-700 block mb-2 font-medium">Folder</label>
-        <select v-model="folder" class="w-full p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select v-model="folder" class="w-full p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Select Folder</option>
           <option v-for="f in folderOptions" :key="f.id" :value="f.id">
             {{ f.name }}
@@ -191,7 +191,7 @@ const handleUpload = async () => {
       <!-- Description Field -->
       <div>
         <label class="text-blue-700 block mb-2 font-medium">Description (optional)</label>
-        <textarea v-model="description" rows="3" class="w-full p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter file description"></textarea>
+        <textarea v-model="description" rows="3" class="w-full p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter file description"></textarea>
       </div>
     </div>
 
@@ -199,11 +199,11 @@ const handleUpload = async () => {
     <div>
       <label class="text-blue-700 block mb-2 font-medium">Select File</label>
       <!-- Added ref="fileInput" to get a reference to the element -->
-      <input type="file" @change="handleFileChange" ref="fileInput" class="block w-full p-3 bg-blue-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <input type="file" @change="handleFileChange" ref="fileInput" class="block w-full p-3 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
     </div>
 
     <!-- Display File Properties (e.g. data point count) -->
-    <div v-if="fileProperties" class="p-4 bg-blue-100 rounded-md">
+    <div v-if="fileProperties" class="p-4 bg-white border border-gray-300 rounded-md">
       <p class="text-blue-700">Data Points: {{ fileProperties.dataPointCount }}</p>
     </div>
 

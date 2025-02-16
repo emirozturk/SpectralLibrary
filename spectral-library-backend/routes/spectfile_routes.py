@@ -121,6 +121,11 @@ def get_owned_files():
                 "created_at": s.created_at.isoformat() if s.created_at else None,
             } for s in owned_files]
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -162,6 +167,11 @@ def get_shared_files():
                 "created_at": s.created_at.isoformat() if s.created_at else None,
             } for s in shared_files]
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -192,6 +202,11 @@ def get_public_files():
                 "created_at": s.created_at.isoformat() if s.created_at else None,
             } for s in public_files]
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -254,6 +269,10 @@ def delete_spectfile(file_id):
         ).first()
         if not spectfile:
             abort(404, description="Spectfile not found.")
+
+        if spectfile.folder.user.email != get_jwt_identity():
+            abort(403, description="You are not authorized to delete this file.")
+            
         spectfile.deleted_at = datetime.now()
         session.commit()
         return jsonify({"isSuccess": True, "body": {"id": file_id}}), 200

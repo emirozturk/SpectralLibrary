@@ -22,11 +22,15 @@ def get_users():
                     'is_confirmed': u.is_confirmed,
                     'company': u.company,
                     'created_at': u.created_at.isoformat() if u.created_at else None,
-                    'deleted_at': u.deleted_at.isoformat() if u.deleted_at else None,
-                } for u in users]
+                } for u in users if u.deleted_at == None]
             
         }), 200
         return result
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -52,6 +56,11 @@ def get_user(user_id):
             "isSuccess": True,
             "body": result
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -80,6 +89,11 @@ def add_user():
                 "company": user.company,
             }
         }), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
@@ -87,6 +101,14 @@ def add_user():
 @user_bp.post("")
 @jwt_required()
 def add_user_admin():
+    email = get_jwt_identity()
+    user = get_session().query(User).filter(User.email == email).first()
+    if user.type != "admin":
+        return jsonify({
+            "isSuccess": False,
+            "body": "Unauthorized"
+        }), 401
+
     session = get_session()
     try:
         data = request.json
@@ -109,12 +131,25 @@ def add_user_admin():
                 "company": user.company,
             }
         }), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
+
 
 @user_bp.put("")
 @jwt_required()
 def update_user():
+    user_email = get_jwt_identity()
+    if data["email"] != user_email:
+        return jsonify({
+            "isSuccess": False,
+            "body": "Unauthorized"
+        }), 401
+    
     session = get_session()
     try:
         data = request.json
@@ -137,8 +172,14 @@ def update_user():
 
             }
         }), 201
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
+
 
 @user_bp.post("/forgot-password")
 def forgot_password():
@@ -167,12 +208,25 @@ def forgot_password():
             "isSuccess": True,
             "body": "Password reset."
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()
 
 @user_bp.delete("/<int:user_id>")
 @jwt_required()
 def delete_user(user_id):
+    user_email = get_jwt_identity()
+    user = get_session().query(User).filter(User.email == user_email).first()
+    if user.type != "admin":
+        return jsonify({
+            "isSuccess": False,
+            "body": "Unauthorized"
+        }), 401
+    
     session = get_session()
     try:
         user = session.query(User).filter(User.id == user_id).first()
@@ -184,5 +238,10 @@ def delete_user(user_id):
             "isSuccess": True,
             "body": "User deleted."
         }), 200
+    except Exception as e:
+        return jsonify({
+            "isSuccess": False,
+            "body": str(e)
+        }), 500
     finally:
         session.close()

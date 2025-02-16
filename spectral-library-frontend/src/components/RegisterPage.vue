@@ -43,75 +43,75 @@ const handleSubmit = async (e) => {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-primary-light">
-    <div class="bg-background p-8 rounded shadow-md w-full max-w-md">
-      <h2 class="text-2xl font-bold text-primary-dark mb-6 text-center">
+  <div class="min-h-screen flex items-center justify-center bg-blue-50">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+      <h2 class="text-3xl font-semibold text-blue-800 mb-6 text-center">
         Register
       </h2>
-      <div v-if="error" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+      <div v-if="error" class="bg-red-100 text-red-600 p-3 rounded mb-4">
         {{ error }}
       </div>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form @submit.prevent="handleSubmit" class="space-y-6">
         <!-- Email Field -->
         <div class="relative">
-          <EnvelopeIcon class="h-4 w-4 text-primary-dark absolute left-3 top-1/2 transform -translate-y-1/2" />
+          <EnvelopeIcon class="h-5 w-5 text-blue-600 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="email"
             id="email"
             required
             v-model="email"
-            class="pl-10 pr-3 py-2 w-full border border-primary-dark rounded focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Email"
+            class="pl-10 pr-3 py-2 w-full border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <!-- Password Field -->
         <div class="relative">
-          <LockClosedIcon class="h-5 w-5 text-primary-dark absolute left-3 top-1/2 transform -translate-y-1/2" />
+          <LockClosedIcon class="h-5 w-5 text-blue-600 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="password"
             id="password"
             required
             v-model="password"
-            class="pl-10 pr-3 py-2 w-full border border-primary-dark rounded focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Password"
+            class="pl-10 pr-3 py-2 w-full border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <!-- Confirm Password Field -->
         <div class="relative">
-          <LockClosedIcon class="h-5 w-5 text-primary-dark absolute left-3 top-1/2 transform -translate-y-1/2" />
+          <LockClosedIcon class="h-5 w-5 text-blue-600 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="password"
             id="confirmPassword"
             required
             v-model="confirmPassword"
-            class="pl-10 pr-3 py-2 w-full border border-primary-dark rounded focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Confirm Password"
+            class="pl-10 pr-3 py-2 w-full border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <!-- Company Field -->
         <div class="relative">
-          <BuildingOfficeIcon class="h-5 w-5 text-primary-dark absolute left-3 top-1/2 transform -translate-y-1/2" />
+          <BuildingOfficeIcon class="h-5 w-5 text-blue-600 absolute left-3 top-1/2 transform -translate-y-1/2" />
           <input
             type="text"
             id="company"
             required
             v-model="company"
-            class="pl-10 pr-3 py-2 w-full border border-primary-dark rounded focus:outline-none focus:ring-2 focus:ring-primary"
             placeholder="Company"
+            class="pl-10 pr-3 py-2 w-full border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <button
           type="submit"
           :disabled="isPending"
-          class="w-full py-2 px-4 bg-primary hover:bg-primary-dark text-white font-semibold rounded focus:outline-none focus:ring-2 focus:ring-primary"
+          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {{ isPending ? "Registering..." : "Register" }}
         </button>
       </form>
-      <div class="mt-6 text-center">
+      <div class="mt-6 text-center text-sm">
         <p>
           Already have an account?
-          <RouterLink to="/login" class="text-primary hover:underline">
+          <RouterLink to="/login" class="text-blue-600 hover:underline">
             Login
           </RouterLink>
         </p>

@@ -43,48 +43,59 @@ const handleSubmit = async () => {
 
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-primary-light">
-    <div class="bg-background p-8 rounded shadow-md w-full max-w-md">
-      <h2 class="text-2xl font-bold text-primary-dark mb-6 text-center">
-        Login
-      </h2>
-      <div v-if="error" class="bg-red-100 text-red-700 p-3 rounded mb-4">
+  <div class="min-h-screen flex items-center justify-center bg-blue-50">
+    <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+      <h2 class="text-3xl font-semibold text-blue-800 mb-6 text-center">Login</h2>
+      <div v-if="error" class="bg-red-100 text-red-600 p-3 rounded mb-4">
         {{ error }}
       </div>
-      <form @submit.prevent="handleSubmit" class="space-y-4">
-        <div class="flex items-center border border-primary-dark rounded">
-          <div class="flex-shrink-0 px-3">
-            <EnvelopeIcon class="h-4 w-4 text-primary-dark" />
-          </div>
-          <input type="email" id="email" required v-model="email"
-            class="flex-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-r" placeholder="Email" />
+      <form @submit.prevent="handleSubmit" class="space-y-6">
+        <div class="flex items-center border border-blue-300 rounded-lg overflow-hidden">
+          <span class="px-3">
+            <EnvelopeIcon class="h-5 w-5 text-blue-600" />
+          </span>
+          <input
+            type="email"
+            id="email"
+            required
+            v-model="email"
+            placeholder="Email"
+            class="flex-1 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
         </div>
-        <div class="flex items-center border border-primary-dark rounded">
-          <div class="flex-shrink-0 px-3">
-            <LockClosedIcon class="h-4 w-4 text-primary-dark" />
-          </div>
-          <input type="password" id="password" required v-model="password"
-            class="flex-1 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary rounded-r"
-            placeholder="Password" />
+        <div class="flex items-center border border-blue-300 rounded-lg overflow-hidden">
+          <span class="px-3">
+            <LockClosedIcon class="h-5 w-5 text-blue-600" />
+          </span>
+          <input
+            type="password"
+            id="password"
+            required
+            v-model="password"
+            placeholder="Password"
+            class="flex-1 py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
         </div>
-        <button type="submit" :disabled="isPending" :class="[
-          'w-full py-2 px-4 bg-primary hover:bg-primary-dark text-black font-semibold rounded focus:outline-none focus:ring-2 focus:ring-primary',
-          isPending ? 'opacity-50 cursor-not-allowed' : ''
-        ]">
+        <button
+          type="submit"
+          :disabled="isPending"
+          class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           {{ isPending ? "Logging in..." : "Login" }}
         </button>
       </form>
-      <div class="mt-6 flex justify-between">
-        <RouterLink to="/register" class="text-primary hover:underline">
+      <div class="mt-6 flex justify-between text-sm">
+        <RouterLink to="/register" class="text-blue-600 hover:underline">
           Register
         </RouterLink>
-        <RouterLink to="/forgot-password" class="text-primary hover:underline">
+        <RouterLink to="/forgot-password" class="text-blue-600 hover:underline">
           Forgot Password?
         </RouterLink>
       </div>
     </div>
   </div>
 </template>
+
 
 
 <style scoped></style>
