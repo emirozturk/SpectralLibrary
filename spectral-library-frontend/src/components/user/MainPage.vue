@@ -1,7 +1,7 @@
 <script setup lang="js">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import { Disclosure, DisclosureButton, DisclosurePanel, Dialog } from '@headlessui/vue'
 import { getAllWithToken, putWithToken, delWithToken } from '../../../lib/fetch-api'
 // Import icons from heroicons
 import { EyeIcon, EyeSlashIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/solid'
@@ -97,7 +97,7 @@ const filteredMyFiles = computed(() => {
     }
     if (searchFiles.value.trim()) {
       const q = searchFiles.value.toLowerCase()
-      match = match && ( (file.description || file.name).toLowerCase().includes(q) )
+      match = match && ((file.description || file.name).toLowerCase().includes(q))
     }
     return match
   })
@@ -169,15 +169,69 @@ const deleteFile = async (file) => {
   }
 }
 
-// Share a file (using a simple prompt to get comma‑separated emails)
+// --- Share Modal Reactive State and Functions ---
+// Modal visibility and current file to share
+const showShareModal = ref(false)
+const currentFileToShare = ref(null)
+
+// List of all users (fetched from backend), search query, and selected user emails.
+const allUsers = ref([])
+const searchUsers = ref('')
+const selectedUserEmails = ref([])
+
+const fetchUsers = async () => {
+  const res = await getAllWithToken("users", null)
+  if (res.isSuccess) {
+    allUsers.value = res.body
+  } else {
+    alert(res.message)
+  }
+}
+
+// Filtered list of users for the modal
+const filteredUsers = computed(() => {
+  if (!searchUsers.value.trim()) return allUsers.value
+  const q = searchUsers.value.toLowerCase()
+  return allUsers.value.filter(user =>
+    user.email.toLowerCase().includes(q) || (user.name && user.name.toLowerCase().includes(q))
+  )
+})
+
+// Open share modal for a specific file.
+// If the file is already shared, pre-check those users.
 const shareFile = async (file) => {
-  const emails = prompt("Enter comma-separated user emails to share with:")
-  if (!emails) return
-  const updated = { ...file, shared_with: emails.split(",").map(e => e.trim()) }
-  const res = await putWithToken("spectfiles", updated)
+  currentFileToShare.value = file
+  // Fetch users if not already loaded.
+  if (allUsers.value.length === 0) {
+    await fetchUsers()
+  }
+  // Prepopulate selectedUserEmails if file already shared.
+  if (file.shared_with && Array.isArray(file.shared_with)) {
+    selectedUserEmails.value = [...file.shared_with]
+  } else {
+    selectedUserEmails.value = []
+  }
+  searchUsers.value = ''
+  showShareModal.value = true
+}
+
+// Confirm sharing action in modal.
+const confirmShare = async () => {
+  if (selectedUserEmails.value.length === 0) {
+    alert("Please select at least one user to share with.")
+    return
+  }
+  // Build payload with file id and selected users.
+  const payload = {
+    file_id: currentFileToShare.value.id,
+    shared_with: selectedUserEmails.value,
+  }
+  const res = await putWithToken("spectfiles/share", payload)
   if (res.isSuccess) {
     await fetchInitialData()
-    alert(`File ${file.description || file.name} shared successfully.`)
+    alert(`File ${currentFileToShare.value.description || currentFileToShare.value.name} shared successfully.`)
+    showShareModal.value = false
+    currentFileToShare.value = null
   } else {
     alert(res.message)
   }
@@ -300,9 +354,9 @@ const drawPlot = () => {
                 </h3>
               </div>
               <p class="mt-1 text-sm text-gray-600">
-                Category: {{ file.category?.name || 'N/A' }} |
-                Subcategory: {{ file.subcategory?.name || 'N/A' }} |
-                Folder: {{ file.folder?.name || 'N/A' }} |
+                Category: {{ file.category || 'N/A' }} |
+                Subcategory: {{ file.subcategory || 'N/A' }} |
+                Folder: {{ file.folder || 'N/A' }} |
                 Public: {{ file.is_public ? 'Yes' : 'No' }}
               </p>
             </div>
@@ -333,9 +387,9 @@ const drawPlot = () => {
                 </h3>
               </div>
               <p class="mt-1 text-sm text-gray-600">
-                Category: {{ file.category?.name || 'N/A' }} |
-                Subcategory: {{ file.subcategory?.name || 'N/A' }} |
-                Folder: {{ file.folder?.name || 'N/A' }} |
+                Category: {{ file.category || 'N/A' }} |
+                Subcategory: {{ file.subcategory || 'N/A' }} |
+                Folder: {{ file.folder || 'N/A' }} |
                 Public: {{ file.is_public ? 'Yes' : 'No' }}
               </p>
             </div>
@@ -350,9 +404,41 @@ const drawPlot = () => {
         Draw Plot
       </button>
     </div>
+
+    <!-- Share Modal (using Headless UI Dialog) -->
+    <Dialog :open="showShareModal" as="div" class="fixed inset-0 z-10 overflow-y-auto" @close="showShareModal = false">
+      <div class="min-h-screen px-4 text-center">
+        <Dialog.Overlay class="fixed inset-0 bg-black opacity-30" />
+        <!-- Trick to center the modal content -->
+        <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+          <Dialog.Title class="text-lg font-medium leading-6 text-gray-900">
+            Share File: {{ currentFileToShare?.description || currentFileToShare?.name }}
+          </Dialog.Title>
+          <div class="mt-4">
+            <!-- Search input for users -->
+            <input type="text" v-model="searchUsers" placeholder="Search users..." class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
+            <!-- List of users with checkboxes -->
+            <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2">
+              <div v-for="user in filteredUsers" :key="user.id" class="flex items-center py-1">
+                <input type="checkbox" :value="user.email" v-model="selectedUserEmails" class="mr-2" />
+                <span>{{ user.name }} ({{ user.email }})</span>
+              </div>
+              <div v-if="filteredUsers.length === 0" class="text-gray-500 text-center py-2">
+                No users found.
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end space-x-2">
+            <button @click="showShareModal = false" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">
+              Cancel
+            </button>
+            <button @click="confirmShare" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              Share
+            </button>
+          </div>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
-
-<style scoped>
-/* Additional styling can be added here */
-</style>

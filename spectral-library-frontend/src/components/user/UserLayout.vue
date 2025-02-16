@@ -4,7 +4,7 @@ export default {
   data() {
     return {
       // Replace with your actual user data retrieval method (Vuex, Pinia, etc.)
-      userEmail: localStorage.getItem('email') || 'user@example.com'
+      userEmail: JSON.parse(localStorage.getItem('user'))["email"]
     };
   },
   methods: {

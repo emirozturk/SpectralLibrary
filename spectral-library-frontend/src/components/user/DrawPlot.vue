@@ -1,16 +1,8 @@
-
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Plotly from 'plotly.js-dist'
-
-// Define interfaces
-const props = defineProps({
-  yourFiles: {
-    type: Array,
-    required: true
-  }
-})
+import { getAllWithToken } from '../../../lib/fetch-api'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,59 +11,77 @@ const selectedFileItems = ref([])
 const plotData = ref([])
 const layout = ref({})
 
-// Watch for changes in route query params
-watch(() => route.query.files, (newFiles) => {
-  setupPlot(newFiles)
-}, { immediate: true })
-
-const setupPlot = async (filesParam) => {
-  if (!filesParam) {
+const setupPlot = async (idsParam) => {
+  console.log("setupPlot called with idsParam:", idsParam)
+  if (!idsParam) {
     alert('No files selected for plotting.')
-    router.push('/file-management') // Adjust route as needed
+    router.push('/user/mainpage') // Adjust route as needed
     return
   }
 
-  const fileIds = filesParam.split(',').map(id => parseInt(id, 10))
-  const filesToPlot = props.yourFiles.filter(file => fileIds.includes(file.id))
+  try {
+    // Build the URL manually to include the query parameter "ids"
+    const apiUrl = `spectfiles/draw?ids=${idsParam}`
+    console.log("Calling API with URL:", apiUrl)
+    const response = await getAllWithToken(apiUrl, null)
 
-  if (filesToPlot.length === 0) {
-    alert('Selected files not found.')
-    router.push('/file-management') // Adjust route as needed
-    return
+    if (!response.isSuccess) {
+      throw new Error(response.message || 'Failed to fetch files.')
+    }
+
+    const filesToPlot = response.body
+    if (!filesToPlot || filesToPlot.length === 0) {
+      alert('Selected files not found.')
+      router.push('/user/mainpage')
+      return
+    }
+
+    // Prepare Plotly data based on the file data from backend.
+    // Transform the array of objects to separate x and y arrays.
+    // Change mode to 'lines' to not show the individual points.
+    plotData.value = filesToPlot.map(file => ({
+      x: file.data.map(point => point.x),
+      y: file.data.map(point => point.y),
+      mode: 'lines',
+      type: 'scatter',
+      name: file.description
+    }))
+
+    // Define layout for the plot.
+    layout.value = {
+      title: 'Files Data Plot',
+      xaxis: {
+        title: 'X Axis',
+        showgrid: true,
+        zeroline: false
+      },
+      yaxis: {
+        title: 'Y Axis',
+        showline: false
+      },
+      autosize: true
+    }
+
+    // Create the Plotly chart.
+    Plotly.newPlot('plotly-chart', plotData.value, layout.value, {
+      displayModeBar: true,
+      responsive: true
+    })
+  } catch (error) {
+    console.error("Error in setupPlot:", error)
+    alert(error.message)
+    router.push('/user/mainpage')
   }
-
-  selectedFileItems.value = filesToPlot
-
-  // Prepare Plotly data
-  plotData.value = filesToPlot.map(file => ({
-    x: file.data.x,
-    y: file.data.y,
-    mode: 'lines+markers',
-    type: 'scatter',
-    name: file.name
-  }))
-
-  // Define layout
-  layout.value = {
-    title: 'Files Data Plot',
-    xaxis: {
-      title: 'X Axis',
-      showgrid: true,
-      zeroline: false
-    },
-    yaxis: {
-      title: 'Y Axis',
-      showline: false
-    },
-    autosize: true
-  }
-
-  // Create plot
-  Plotly.newPlot('plotly-chart', plotData.value, layout.value, {
-    displayModeBar: true,
-    responsive: true
-  })
 }
+
+// Watch for changes in the route query parameter "ids" and call setupPlot immediately.
+watch(
+  () => route.query.ids,
+  (newIds) => {
+    setupPlot(newIds)
+  },
+  { immediate: true }
+)
 
 const handleDownload = () => {
   const plotElement = document.getElementById('plotly-chart')
@@ -87,10 +97,6 @@ const handleDownload = () => {
       })
   }
 }
-
-onMounted(() => {
-  setupPlot(route.query.files)
-})
 </script>
 
 <template>
@@ -102,7 +108,7 @@ onMounted(() => {
       <div id="plotly-chart" style="width: 100%; height: 100%"></div>
     </div>
 
-    <!-- Download and Zoom Buttons -->
+    <!-- Download Button -->
     <div class="flex space-x-4">
       <button
         @click="handleDownload"
