@@ -6,8 +6,6 @@ import { getAllWithToken } from '../../../lib/fetch-api'
 
 const route = useRoute()
 const router = useRouter()
-
-const selectedFileItems = ref([])
 const plotData = ref([])
 const layout = ref({})
 
