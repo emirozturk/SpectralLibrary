@@ -8,6 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const plotData = ref([])
 const layout = ref({})
+const useSeparateYAxes = ref(false)
 
 const setupPlot = async (idsParam) => {
   console.log("setupPlot called with idsParam:", idsParam)
@@ -37,12 +38,13 @@ const setupPlot = async (idsParam) => {
     // Prepare Plotly data based on the file data from backend.
     // Transform the array of objects to separate x and y arrays.
     // Change mode to 'lines' to not show the individual points.
-    plotData.value = filesToPlot.map(file => ({
+    plotData.value = filesToPlot.map((file, index) => ({
       x: file.data.map(point => point.x),
       y: file.data.map(point => point.y),
       mode: 'lines',
       type: 'scatter',
-      name: file.description
+      name: file.description,
+      yaxis: useSeparateYAxes.value ? `y${index + 1}` : 'y'
     }))
 
     // Define layout for the plot.
@@ -58,6 +60,18 @@ const setupPlot = async (idsParam) => {
         showline: false
       },
       autosize: true
+    }
+
+    if (useSeparateYAxes.value) {
+      plotData.value.forEach((_, index) => {
+        if (index > 0) {
+          layout.value[`yaxis${index + 1}`] = {
+            title: `Y Axis ${index + 1}`,
+            overlaying: 'y',
+            side: 'right'
+          }
+        }
+      })
     }
 
     // Create the Plotly chart.
@@ -95,10 +109,15 @@ const handleDownload = () => {
       })
   }
 }
+
+const toggleYAxes = () => {
+  useSeparateYAxes.value = !useSeparateYAxes.value
+  setupPlot(route.query.ids)
+}
 </script>
 
 <template>
-  <div class="p-8 max-w-7xl mx-auto bg-blue-50 rounded-lg min-h-screen flex flex-col space-y-8">
+  <div class="p-8 max-w-full mx-auto bg-white-50 rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-4xl font-bold text-blue-700 mb-6 text-center">Plot Drawing</h1>
 
     <!-- Plotly Chart -->
@@ -106,13 +125,19 @@ const handleDownload = () => {
       <div id="plotly-chart" style="width: 100%; height: 100%"></div>
     </div>
 
-    <!-- Download Button -->
+    <!-- Controls -->
     <div class="flex space-x-4">
       <button
         @click="handleDownload"
         class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
       >
         Download Plot
+      </button>
+      <button
+        @click="toggleYAxes"
+        class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+      >
+        Toggle Separate Y-Axes
       </button>
     </div>
   </div>
@@ -121,5 +146,6 @@ const handleDownload = () => {
 <style scoped>
 #plotly-chart {
   min-height: 500px;
+  height: calc(100vh - 200px); /* Adjust height to use full page */
 }
 </style>

@@ -3,34 +3,44 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Disclosure, DisclosureButton, DisclosurePanel, Dialog } from '@headlessui/vue'
 import { getAllWithToken, putWithToken, delWithToken } from '../../../lib/fetch-api'
-// Import icons from heroicons
 import { EyeIcon, EyeSlashIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/solid'
 
 const router = useRouter()
 
 // --- Reactive state for file groups (from backend) ---
-const files = ref([])           // Owned files (your files)
-const sharedFiles = ref([])     // Files shared with you
-const publicFiles = ref([])     // Public files
+const files = ref([])           // Owned files (My Spectra)
+const sharedFiles = ref([])     // Shared files (Shared Spectra)
+const publicFiles = ref([])     // Public files (Public Spectra)
 
 // --- Selections for drawing plots ---
-const selectedFiles = ref([])
+const selectedMyFiles = ref([])
 const selectedSharedFiles = ref([])
 const selectedPublicFiles = ref([])
 
 // --- Search query strings for filtering files ---
-const searchFiles = ref('')
+const searchMyFiles = ref('')
 const searchSharedFiles = ref('')
 const searchPublicFiles = ref('')
 
-// --- Additional filter state for "Your Files" ---
-const filterCategory = ref('')      // Selected category id (string); empty means no filter.
-const filterSubcategory = ref('')   // Selected subcategory id
-const filterFolder = ref('')        // Selected folder id
+// --- Distinct filter state for each group ---
+// For My Spectra (owned files)
+const myFilterCategory = ref('')
+const myFilterSubcategory = ref('')
+const myFilterFolder = ref('')
 
-// --- Data for dropdown options ---
+// For Shared Spectra
+const sharedFilterCategory = ref('')
+const sharedFilterSubcategory = ref('')
+const sharedFilterFolder = ref('')
+
+// For Public Spectra
+const publicFilterCategory = ref('')
+const publicFilterSubcategory = ref('')
+const publicFilterFolder = ref('')
+
+// --- Data for dropdown options (global) ---
 const categories = ref([])   // Fetched categories (each with a subcategories array)
-const folderList = ref([])   // Fetched folders (all folders owned by the user)
+const folderList = ref([])   // Fetched folders
 
 // --- Fetch Data Functions ---
 const fetchInitialData = async () => {
@@ -81,73 +91,133 @@ onMounted(async () => {
   await fetchFolders()
 })
 
-// --- Computed: Filtered Lists ---
-// For Owned Files, we apply the search query and our three additional filters.
+/*
+  --- Computed: Filtered Lists ---
+  Note: Files store the category by name in file.category (and similarly for subcategory and folder).
+*/
+
+// My Spectra filtering
 const filteredMyFiles = computed(() => {
   return files.value.filter(file => {
     let match = true
-    if (filterCategory.value) {
-      match = match && (String(file.category_id) === filterCategory.value)
+    if (myFilterCategory.value) {
+      match = match && (file.category === myFilterCategory.value)
     }
-    if (filterSubcategory.value) {
-      match = match && (String(file.subcategory_id) === filterSubcategory.value)
+    if (myFilterSubcategory.value) {
+      match = match && (file.subcategory === myFilterSubcategory.value)
     }
-    if (filterFolder.value) {
-      match = match && (String(file.folder_id) === filterFolder.value)
+    if (myFilterFolder.value) {
+      match = match && (file.folder === myFilterFolder.value)
     }
-    if (searchFiles.value.trim()) {
-      const q = searchFiles.value.toLowerCase()
+    if (searchMyFiles.value.trim()) {
+      const q = searchMyFiles.value.toLowerCase()
       match = match && ((file.description || file.name).toLowerCase().includes(q))
     }
     return match
   })
 })
 
-// For shared and public files, we use the search query only.
+// Shared Spectra filtering
 const filteredSharedFiles = computed(() => {
-  if (!searchSharedFiles.value.trim()) return sharedFiles.value
-  const q = searchSharedFiles.value.toLowerCase()
-  return sharedFiles.value.filter(file =>
-    (file.description || file.name).toLowerCase().includes(q)
-  )
-})
-const filteredPublicFiles = computed(() => {
-  if (!searchPublicFiles.value.trim()) return publicFiles.value
-  const q = searchPublicFiles.value.toLowerCase()
-  return publicFiles.value.filter(file =>
-    (file.description || file.name).toLowerCase().includes(q)
-  )
+  return sharedFiles.value.filter(file => {
+    let match = true
+    if (sharedFilterCategory.value) {
+      match = match && (file.category === sharedFilterCategory.value)
+    }
+    if (sharedFilterSubcategory.value) {
+      match = match && (file.subcategory === sharedFilterSubcategory.value)
+    }
+    if (sharedFilterFolder.value) {
+      match = match && (file.folder === sharedFilterFolder.value)
+    }
+    if (searchSharedFiles.value.trim()) {
+      const q = searchSharedFiles.value.toLowerCase()
+      match = match && ((file.description || file.name).toLowerCase().includes(q))
+    }
+    return match
+  })
 })
 
-// --- Computed: Dropdown Options for Filtering ---
-// Category dropdown options:
+// Public Spectra filtering
+const filteredPublicFiles = computed(() => {
+  return publicFiles.value.filter(file => {
+    let match = true
+    if (publicFilterCategory.value) {
+      match = match && (file.category === publicFilterCategory.value)
+    }
+    if (publicFilterSubcategory.value) {
+      match = match && (file.subcategory === publicFilterSubcategory.value)
+    }
+    if (publicFilterFolder.value) {
+      match = match && (file.folder === publicFilterFolder.value)
+    }
+    if (searchPublicFiles.value.trim()) {
+      const q = searchPublicFiles.value.toLowerCase()
+      match = match && ((file.description || file.name).toLowerCase().includes(q))
+    }
+    return match
+  })
+})
+
+/*
+  --- Computed: Dropdown Options ---
+  We build the dropdown options from the fetched categories and folders.
+  We assume the category name to be used as both id and display text.
+*/
+
 const categoryOptions = computed(() => {
   return categories.value.map(cat => ({
-    id: String(cat.id),
-    name: cat.name
+    id: cat.name_en, // using the name as key (e.g. "c1")
+    name: cat.name_en
   }))
 })
-// Subcategory dropdown options: if a category is selected, return its subcategories.
-const subcategoryOptions = computed(() => {
-  if (!filterCategory.value) return []
-  const selectedCat = categories.value.find(cat => String(cat.id) === filterCategory.value)
+
+// For subcategories, each group’s options depend on the group’s selected category.
+const mySubcategoryOptions = computed(() => {
+  if (!myFilterCategory.value) return []
+  const selectedCat = categories.value.find(cat => cat.name_en === myFilterCategory.value)
   return selectedCat && selectedCat.subcategories
     ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
-        id: String(sub.id),
-        name: sub.name
+        id: sub.name_en,
+        name: sub.name_en
       }))
     : []
 })
-// Folder dropdown options:
+
+const sharedSubcategoryOptions = computed(() => {
+  if (!sharedFilterCategory.value) return []
+  const selectedCat = categories.value.find(cat => cat.name_en === sharedFilterCategory.value)
+  return selectedCat && selectedCat.subcategories
+    ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
+        id: sub.name_en,
+        name: sub.name_en
+      }))
+    : []
+})
+
+const publicSubcategoryOptions = computed(() => {
+  if (!publicFilterCategory.value) return []
+  const selectedCat = categories.value.find(cat => cat.name_en === publicFilterCategory.value)
+  return selectedCat && selectedCat.subcategories
+    ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
+        id: sub.name_en,
+        name: sub.name_en
+      }))
+    : []
+})
+
+// Folder options (global)
 const folderOptions = computed(() => {
   return folderList.value.map(fold => ({
-    id: String(fold.id),
+    id: fold.name, // assuming file.folder stores folder name
     name: fold.name
   }))
 })
 
-// --- Handlers ---
-// Toggle public/private status for a file
+/*
+  --- Handlers ---
+*/
+
 const togglePublic = async (file) => {
   const updated = { ...file, is_public: !file.is_public }
   const res = await putWithToken("spectfiles", updated)
@@ -158,7 +228,6 @@ const togglePublic = async (file) => {
   }
 }
 
-// Delete a file
 const deleteFile = async (file) => {
   if (!confirm("Are you sure you want to delete this file?")) return
   const res = await delWithToken("spectfiles", file.id)
@@ -170,11 +239,8 @@ const deleteFile = async (file) => {
 }
 
 // --- Share Modal Reactive State and Functions ---
-// Modal visibility and current file to share
 const showShareModal = ref(false)
 const currentFileToShare = ref(null)
-
-// List of all users (fetched from backend), search query, and selected user emails.
 const allUsers = ref([])
 const searchUsers = ref('')
 const selectedUserEmails = ref([])
@@ -188,24 +254,20 @@ const fetchUsers = async () => {
   }
 }
 
-// Filtered list of users for the modal
 const filteredUsers = computed(() => {
   if (!searchUsers.value.trim()) return allUsers.value
   const q = searchUsers.value.toLowerCase()
   return allUsers.value.filter(user =>
-    user.email.toLowerCase().includes(q) || (user.name && user.name.toLowerCase().includes(q))
+    user.email.toLowerCase().includes(q) ||
+    (user.name && user.name.toLowerCase().includes(q))
   )
 })
 
-// Open share modal for a specific file.
-// If the file is already shared, pre-check those users.
 const shareFile = async (file) => {
   currentFileToShare.value = file
-  // Fetch users if not already loaded.
   if (allUsers.value.length === 0) {
     await fetchUsers()
   }
-  // Prepopulate selectedUserEmails if file already shared.
   if (file.shared_with && Array.isArray(file.shared_with)) {
     selectedUserEmails.value = [...file.shared_with]
   } else {
@@ -215,13 +277,11 @@ const shareFile = async (file) => {
   showShareModal.value = true
 }
 
-// Confirm sharing action in modal.
 const confirmShare = async () => {
   if (selectedUserEmails.value.length === 0) {
     alert("Please select at least one user to share with.")
     return
   }
-  // Build payload with file id and selected users.
   const payload = {
     file_id: currentFileToShare.value.id,
     shared_with: selectedUserEmails.value,
@@ -237,10 +297,9 @@ const confirmShare = async () => {
   }
 }
 
-// Draw Plot: gather selected file IDs from all sections and navigate to DrawPlot page.
 const drawPlot = () => {
   const allSelected = [
-    ...selectedFiles.value,
+    ...selectedMyFiles.value,
     ...selectedSharedFiles.value,
     ...selectedPublicFiles.value
   ]
@@ -251,61 +310,213 @@ const drawPlot = () => {
   const ids = allSelected.map(file => file.id).join(',')
   router.push({ name: 'DrawPlot', query: { ids } })
 }
+
+// --- Pagination State ---
+const itemsPerPage = 10
+const currentPageMyFiles = ref(1)
+const currentPageSharedFiles = ref(1)
+const currentPagePublicFiles = ref(1)
+
+// --- Computed: Paginated Lists ---
+const paginatedMyFiles = computed(() => {
+  const start = (currentPageMyFiles.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredMyFiles.value.slice(start, end)
+})
+
+const paginatedSharedFiles = computed(() => {
+  const start = (currentPageSharedFiles.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredSharedFiles.value.slice(start, end)
+})
+
+const paginatedPublicFiles = computed(() => {
+  const start = (currentPagePublicFiles.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredPublicFiles.value.slice(start, end)
+})
+
+// --- Computed: Total Pages ---
+const totalPagesMyFiles = computed(() => Math.ceil(filteredMyFiles.value.length / itemsPerPage))
+const totalPagesSharedFiles = computed(() => Math.ceil(filteredSharedFiles.value.length / itemsPerPage))
+const totalPagesPublicFiles = computed(() => Math.ceil(filteredPublicFiles.value.length / itemsPerPage))
+
+// --- Methods: Pagination Handlers ---
+const changePageMyFiles = (page) => {
+  if (page >= 1 && page <= totalPagesMyFiles.value) {
+    currentPageMyFiles.value = page
+  }
+}
+
+const changePageSharedFiles = (page) => {
+  if (page >= 1 && page <= totalPagesSharedFiles.value) {
+    currentPageSharedFiles.value = page
+  }
+}
+
+const changePagePublicFiles = (page) => {
+  if (page >= 1 && page <= totalPagesPublicFiles.value) {
+    currentPagePublicFiles.value = page
+  }
+}
 </script>
 
 <template>
   <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
     <h1 class="text-4xl font-bold text-blue-700 text-center mb-6">User Main Page</h1>
 
-    <!-- Owned Files Collapsible Group with Extra Filters -->
+    <!-- Public Spectra Section -->
     <Disclosure>
       <template #default="{ open }">
         <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
-          <span class="text-blue-700 font-medium">Files</span>
+          <span class="text-blue-700 font-medium">Public Spectra</span>
           <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
         <DisclosurePanel class="px-4 py-2 bg-white">
-          <!-- Extra Filter Dropdowns -->
+          <!-- Filter Dropdowns for Public Spectra -->
           <div class="flex flex-col md:flex-row gap-4 mb-4">
-            <!-- Category Filter -->
-            <select v-model="filterCategory" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select v-model="publicFilterCategory" class="w-full p-2 border border-gray-300 rounded-md">
               <option value="">All Categories</option>
               <option v-for="opt in categoryOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
               </option>
             </select>
-            <!-- Subcategory Filter -->
-            <select v-model="filterSubcategory" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select v-model="publicFilterSubcategory" class="w-full p-2 border border-gray-300 rounded-md">
               <option value="">All Subcategories</option>
-              <option v-for="opt in subcategoryOptions" :key="opt.id" :value="opt.id">
+              <option v-for="opt in publicSubcategoryOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
               </option>
             </select>
-            <!-- Folder Filter -->
-            <select v-model="filterFolder" class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select v-model="publicFilterFolder" class="w-full p-2 border border-gray-300 rounded-md">
               <option value="">All Folders</option>
               <option v-for="opt in folderOptions" :key="opt.id" :value="opt.id">
                 {{ opt.name }}
               </option>
             </select>
           </div>
-          <!-- Search Bar for Owned Files -->
-          <input type="text" v-model="searchFiles" placeholder="Search your files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
-          <!-- Files List (Modern Card Layout) -->
+          <!-- Search Input -->
+          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <!-- Files List -->
           <div class="grid gap-4">
-            <div
-              v-for="file in filteredMyFiles"
-              :key="file.id"
-              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center"
-            >
+            <div v-for="file in paginatedPublicFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
+              <div class="flex items-center space-x-2">
+                <input type="checkbox" v-model="selectedPublicFiles" :value="file" class="mr-2" />
+                <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
+              </div>
+              <p class="mt-1 text-sm">
+                Category: {{ file.category || 'N/A' }} |
+                Subcategory: {{ file.subcategory || 'N/A' }} |
+                Folder: {{ file.folder || 'N/A' }} |
+                Public: {{ file.is_public ? 'Yes' : 'No' }}
+              </p>
+            </div>
+          </div>
+          <!-- Pagination Controls -->
+          <div class="flex justify-center mt-4">
+            <button @click="changePagePublicFiles(currentPagePublicFiles - 1)" :disabled="currentPagePublicFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <span class="px-3 py-1 bg-gray-100">{{ currentPagePublicFiles }} / {{ totalPagesPublicFiles }}</span>
+            <button @click="changePagePublicFiles(currentPagePublicFiles + 1)" :disabled="currentPagePublicFiles === totalPagesPublicFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
+          </div>
+        </DisclosurePanel>
+      </template>
+    </Disclosure>
+
+    <!-- Shared Spectra Section -->
+    <Disclosure>
+      <template #default="{ open }">
+        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+          <span class="text-blue-700 font-medium">Shared Spectra</span>
+          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
+        </DisclosureButton>
+        <DisclosurePanel class="px-4 py-2 bg-white">
+          <!-- Filter Dropdowns for Shared Spectra -->
+          <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <select v-model="sharedFilterCategory" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Categories</option>
+              <option v-for="opt in categoryOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+            <select v-model="sharedFilterSubcategory" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Subcategories</option>
+              <option v-for="opt in sharedSubcategoryOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+            <select v-model="sharedFilterFolder" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Folders</option>
+              <option v-for="opt in folderOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+          </div>
+          <!-- Search Input -->
+          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <!-- Files List -->
+          <div class="grid gap-4">
+            <div v-for="file in paginatedSharedFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
+              <div class="flex items-center space-x-2">
+                <input type="checkbox" v-model="selectedSharedFiles" :value="file" class="mr-2" />
+                <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
+              </div>
+              <p class="mt-1 text-sm">
+                Category: {{ file.category || 'N/A' }} |
+                Subcategory: {{ file.subcategory || 'N/A' }} |
+                Folder: {{ file.folder || 'N/A' }} |
+                Public: {{ file.is_public ? 'Yes' : 'No' }}
+              </p>
+            </div>
+          </div>
+          <!-- Pagination Controls -->
+          <div class="flex justify-center mt-4">
+            <button @click="changePageSharedFiles(currentPageSharedFiles - 1)" :disabled="currentPageSharedFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <span class="px-3 py-1 bg-gray-100">{{ currentPageSharedFiles }} / {{ totalPagesSharedFiles }}</span>
+            <button @click="changePageSharedFiles(currentPageSharedFiles + 1)" :disabled="currentPageSharedFiles === totalPagesSharedFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
+          </div>
+        </DisclosurePanel>
+      </template>
+    </Disclosure>
+
+    <!-- My Spectra Section -->
+    <Disclosure>
+      <template #default="{ open }">
+        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+          <span class="text-blue-700 font-medium">My Spectra</span>
+          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
+        </DisclosureButton>
+        <DisclosurePanel class="px-4 py-2 bg-white">
+          <!-- Filter Dropdowns for My Spectra -->
+          <div class="flex flex-col md:flex-row gap-4 mb-4">
+            <select v-model="myFilterCategory" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Categories</option>
+              <option v-for="opt in categoryOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+            <select v-model="myFilterSubcategory" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Subcategories</option>
+              <option v-for="opt in mySubcategoryOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+            <select v-model="myFilterFolder" class="w-full p-2 border border-gray-300 rounded-md">
+              <option value="">All Folders</option>
+              <option v-for="opt in folderOptions" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
+              </option>
+            </select>
+          </div>
+          <!-- Search Input -->
+          <input type="text" v-model="searchMyFiles" placeholder="Search your files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <!-- Files List -->
+          <div class="grid gap-4">
+            <div v-for="file in paginatedMyFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center">
               <div>
                 <div class="flex items-center space-x-2">
-                  <input type="checkbox" v-model="selectedFiles" :value="file" class="mr-2" />
-                  <h3 class="text-xl font-bold text-gray-800">
-                    {{ file.description || file.name }}
-                  </h3>
+                  <input type="checkbox" v-model="selectedMyFiles" :value="file" class="mr-2" />
+                  <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
                 </div>
-                <p class="mt-1 text-sm text-gray-600">
+                <p class="mt-1 text-sm">
                   Category: {{ file.category || 'N/A' }} |
                   Subcategory: {{ file.subcategory || 'N/A' }} |
                   Folder: {{ file.folder || 'N/A' }} |
@@ -313,86 +524,23 @@ const drawPlot = () => {
                 </p>
               </div>
               <div class="flex space-x-2 mt-4 md:mt-0">
-                <!-- Toggle Public Button with Icon -->
                 <button @click="togglePublic(file)" class="p-2 bg-yellow-500 hover:bg-yellow-600 rounded">
                   <component :is="file.is_public ? EyeIcon : EyeSlashIcon" class="w-6 h-6 text-white" />
                 </button>
-                <!-- Share Button with Icon -->
                 <button @click="shareFile(file)" class="p-2 bg-blue-500 hover:bg-blue-600 rounded">
                   <ShareIcon class="w-6 h-6 text-white" />
                 </button>
-                <!-- Delete Button with Icon -->
                 <button @click="deleteFile(file)" class="p-2 bg-red-500 hover:bg-red-600 rounded">
                   <TrashIcon class="w-6 h-6 text-white" />
                 </button>
               </div>
             </div>
           </div>
-        </DisclosurePanel>
-      </template>
-    </Disclosure>
-
-    <!-- Shared Files Collapsible Group (Modern Card Layout, No Action Buttons) -->
-    <Disclosure>
-      <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
-          <span class="text-blue-700 font-medium">Shared Files</span>
-          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
-        </DisclosureButton>
-        <DisclosurePanel class="px-4 py-2 bg-white">
-          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
-          <div class="grid gap-4">
-            <div
-              v-for="file in filteredSharedFiles"
-              :key="file.id"
-              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between items-center"
-            >
-              <div class="flex items-center space-x-2">
-                <input type="checkbox" v-model="selectedSharedFiles" :value="file" class="mr-2" />
-                <h3 class="text-xl font-bold text-gray-800">
-                  {{ file.description || file.name }}
-                </h3>
-              </div>
-              <p class="mt-1 text-sm text-gray-600">
-                Category: {{ file.category || 'N/A' }} |
-                Subcategory: {{ file.subcategory || 'N/A' }} |
-                Folder: {{ file.folder || 'N/A' }} |
-                Public: {{ file.is_public ? 'Yes' : 'No' }}
-              </p>
-            </div>
-          </div>
-        </DisclosurePanel>
-      </template>
-    </Disclosure>
-
-    <!-- Public Files Collapsible Group (Modern Card Layout, No Action Buttons) -->
-    <Disclosure>
-      <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
-          <span class="text-blue-700 font-medium">Public Files</span>
-          <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
-        </DisclosureButton>
-        <DisclosurePanel class="px-4 py-2 bg-white">
-          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..." class="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
-          <div class="grid gap-4">
-            <div
-              v-for="file in filteredPublicFiles"
-              :key="file.id"
-              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col justify-between items-center"
-            >
-              <div class="flex items-center space-x-2">
-                <input type="checkbox" v-model="selectedPublicFiles" :value="file" class="mr-2" />
-                <h3 class="text-xl font-bold text-gray-800">
-                  {{ file.description || file.name }}
-                </h3>
-              </div>
-              <p class="mt-1 text-sm text-gray-600">
-                Category: {{ file.category || 'N/A' }} |
-                Subcategory: {{ file.subcategory || 'N/A' }} |
-                Folder: {{ file.folder || 'N/A' }} |
-                Public: {{ file.is_public ? 'Yes' : 'No' }}
-              </p>
-            </div>
+          <!-- Pagination Controls -->
+          <div class="flex justify-center mt-4">
+            <button @click="changePageMyFiles(currentPageMyFiles - 1)" :disabled="currentPageMyFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <span class="px-3 py-1 bg-gray-100">{{ currentPageMyFiles }} / {{ totalPagesMyFiles }}</span>
+            <button @click="changePageMyFiles(currentPageMyFiles + 1)" :disabled="currentPageMyFiles === totalPagesMyFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
           </div>
         </DisclosurePanel>
       </template>
@@ -409,16 +557,13 @@ const drawPlot = () => {
     <Dialog :open="showShareModal" as="div" class="fixed inset-0 z-10 overflow-y-auto" @close="showShareModal = false">
       <div class="min-h-screen px-4 text-center">
         <Dialog.Overlay class="fixed inset-0 bg-black opacity-30" />
-        <!-- Trick to center the modal content -->
         <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
         <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
           <Dialog.Title class="text-lg font-medium leading-6 text-gray-900">
             Share File: {{ currentFileToShare?.description || currentFileToShare?.name }}
           </Dialog.Title>
           <div class="mt-4">
-            <!-- Search input for users -->
-            <input type="text" v-model="searchUsers" placeholder="Search users..." class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" />
-            <!-- List of users with checkboxes -->
+            <input type="text" v-model="searchUsers" placeholder="Search users..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
             <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2">
               <div v-for="user in filteredUsers" :key="user.id" class="flex items-center py-1">
                 <input type="checkbox" :value="user.email" v-model="selectedUserEmails" class="mr-2" />

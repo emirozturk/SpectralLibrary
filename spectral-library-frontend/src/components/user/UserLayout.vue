@@ -47,6 +47,11 @@ export default {
               Upload File
             </router-link>
           </li>
+          <li>
+            <router-link to="/user/update-info" class="hover:text-blue-700">
+              Update Info
+            </router-link>
+          </li>
         </ul>
       </nav>
     </aside>

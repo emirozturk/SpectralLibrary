@@ -9,6 +9,7 @@ import MainPage from '@/components/user/MainPage.vue';
 import FolderManagement from '@/components/user/FolderManagement.vue';
 import UploadFilePage from '@/components/user/UploadFilePage.vue';
 import DrawPlot from '@/components/user/DrawPlot.vue';
+import UpdateInfoPage from '@/components/user/UpdateInfoPage.vue';
 import AdminLayout from '@/components/admin/AdminLayout.vue';
 import AdminMainPage from '@/components/admin/AdminMainPage.vue';
 import CategoryManagement from '@/components/admin/CategoryManagement.vue';
@@ -28,6 +29,7 @@ const routes = [
       { path: 'mainpage', name: 'MainPage', component: MainPage },
       { path: 'folder-management', name: 'FolderManagement', component: FolderManagement },
       { path: 'upload-file', name: 'UploadFile', component: UploadFilePage },
+      { path: 'update-info', name: 'UpdateInfo', component: UpdateInfoPage },
       { path: 'draw-plot', name: 'DrawPlot', component: DrawPlot },
     ]
   },

@@ -143,22 +143,21 @@ def add_user_admin():
 @user_bp.put("")
 @jwt_required()
 def update_user():
-    user_email = get_jwt_identity()
-    if data["email"] != user_email:
-        return jsonify({
-            "isSuccess": False,
-            "body": "Unauthorized"
-        }), 401
-    
-    session = get_session()
     try:
         data = request.json
-        user = session.query(User).filter(User.id == data['id']).first()
+        user_email = get_jwt_identity()
+        if data["email"] != user_email:
+            return jsonify({
+                "isSuccess": False,
+                "body": "Unauthorized"
+            }), 401
+        
+        session = get_session()
+        user = session.query(User).filter(User.email == data['email']).first()
 
         user.email = data['email']
-        user.type = data['type']
         user.company = data['company']
-        user.is_confirmed = data['is_confirmed']
+        user.password = data['password']
 
         session.commit()
         return jsonify({
