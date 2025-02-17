@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://spectrallibrary-backend.vercel.app/api';
+const API_BASE_URL = 'https://spectrallibrary.onrender.com';
 
 export async function getAll(route, id) {
   const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;
