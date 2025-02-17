@@ -20,7 +20,9 @@ def login():
         user = session.query(User).filter(User.email == email).first()
         if not user or not user.password == password:
             abort(401, description="Invalid credentials")
-
+        if not user.is_confirmed:
+            abort(401, description="User is not confirmed")
+            
         access_token = create_access_token(identity=user.email)
         return jsonify(
             {
