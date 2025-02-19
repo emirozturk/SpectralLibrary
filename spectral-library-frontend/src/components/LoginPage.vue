@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { EnvelopeIcon, LockClosedIcon } from '@heroicons/vue/24/outline'
 import { post } from '../../lib/fetch-api'
 import { calculateMD5 } from '../../lib/auth'
+import packageJson from '../../package.json';
+const appVersion = packageJson.version;
 
 const email = ref('')
 const password = ref('')
@@ -92,6 +94,9 @@ const handleSubmit = async () => {
           Forgot Password?
         </RouterLink>
       </div>
+
+      <!-- Add Version at Bottom -->
+      <p class="text-xs text-gray-500 mt-4 text-center">Version: {{ appVersion }}</p>
     </div>
   </div>
 </template>
