@@ -12,7 +12,7 @@ user_bp = Blueprint("user_bp", __name__, url_prefix="/users")
 def get_users():
     session = get_session()
     try:
-        users = session.query(User).filter(User.deleted_at==None).all()
+        users = session.query(User).filter(User.deleted_at.is_(None)).all()
         result = jsonify({
             "isSuccess": True,
             "body": [{
@@ -40,7 +40,7 @@ def get_users():
 def get_user(user_id):
     session = get_session()
     try:
-        user = session.query(User).filter(User.id == user_id).first()
+        user = session.query(User).filter(User.id == user_id,User.deleted_at.is_(None)).first()
         if not user:
             abort(404, description="User not found")
         result = {
@@ -50,7 +50,6 @@ def get_user(user_id):
             'is_confirmed': user.is_confirmed,
             'company': user.company,
             'created_at': user.created_at.isoformat() if user.created_at else None,
-            'deleted_at': user.deleted_at.isoformat() if user.deleted_at else None,
         }
         return jsonify({
             "isSuccess": True,
@@ -102,7 +101,7 @@ def add_user():
 @jwt_required()
 def add_user_admin():
     email = get_jwt_identity()
-    user = get_session().query(User).filter(User.email == email).first()
+    user = get_session().query(User).filter(User.email == email,User.deleted_at.is_(None)).first()
     if user.type != "admin":
         return jsonify({
             "isSuccess": False,
@@ -153,7 +152,7 @@ def update_user():
             }), 401
         
         session = get_session()
-        user = session.query(User).filter(User.email == data['email']).first()
+        user = session.query(User).filter(User.email == data['email'],User.deleted_at.is_(None)).first()
 
         user.email = data['email']
         user.company = data['company']
@@ -192,7 +191,7 @@ def forgot_password():
                 "body": "Email is required."
             }), 400
 
-        user = session.query(User).filter(User.email == email).first()
+        user = session.query(User).filter(User.email == email,User.deleted_at.is_(None)).first()
 
         if not user:
             return jsonify({
@@ -219,7 +218,7 @@ def forgot_password():
 @jwt_required()
 def delete_user(user_id):
     user_email = get_jwt_identity()
-    user = get_session().query(User).filter(User.email == user_email).first()
+    user = get_session().query(User).filter(User.email == user_email,User.deleted_at.is_(None)).first()
     if user.type != "admin":
         return jsonify({
             "isSuccess": False,
@@ -228,7 +227,7 @@ def delete_user(user_id):
     
     session = get_session()
     try:
-        user = session.query(User).filter(User.id == user_id).first()
+        user = session.query(User).filter(User.id == user_id,User.deleted_at.is_(None)).first()
         if not user:
             abort(404, description="User not found")
         user.deleted_at = datetime.now()

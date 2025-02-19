@@ -12,8 +12,10 @@ export default defineConfig({
     vueDevTools(),
     tailwindcss(),
   ],
+  base: '/',  // Ensures correct routing
   server: {
     port: 5173, // Adjust if needed
+    historyApiFallback: true  // Enables fallback for Vue Router
   },
   build: {
     sourcemap: true, // Enable source maps

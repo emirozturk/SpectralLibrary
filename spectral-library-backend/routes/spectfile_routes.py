@@ -271,7 +271,7 @@ def delete_spectfile(file_id):
         if not spectfile:
             abort(404, description="Spectfile not found.")
 
-        if spectfile.folder.user.email != get_jwt_identity():
+        if spectfile.folder.owner.email != get_jwt_identity():
             abort(403, description="You are not authorized to delete this file.")
 
         spectfile.deleted_at = datetime.now()
