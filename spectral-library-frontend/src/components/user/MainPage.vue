@@ -1,11 +1,10 @@
 <script setup lang="js">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted,defineEmits } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel, Dialog } from '@headlessui/vue'
 import { getAllWithToken, putWithToken, delWithToken } from '../../../lib/fetch-api'
 import { EyeIcon, EyeSlashIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/solid'
 
-const router = useRouter()
+const emit = defineEmits(['draw']) // <-- Declare an event to send selected file IDs to the parent
 
 // --- Reactive state for file groups (from backend) ---
 const files = ref([])           // Owned files (My Spectra)
@@ -298,6 +297,7 @@ const confirmShare = async () => {
 }
 
 const drawPlot = () => {
+  // Combine selected files from all groups
   const allSelected = [
     ...selectedMyFiles.value,
     ...selectedSharedFiles.value,
@@ -307,8 +307,10 @@ const drawPlot = () => {
     alert("No files selected for plotting.")
     return
   }
-  const ids = allSelected.map(file => file.id).join(',')
-  router.push({ name: 'DrawPlot', query: { ids } })
+  // Get an array of file IDs (do not join them to a string here)
+  const ids = allSelected.map(file => file.id)
+  // Emit the event with the selected file IDs.
+  emit('draw', ids)
 }
 
 // --- Pagination State ---
@@ -359,6 +361,8 @@ const changePagePublicFiles = (page) => {
     currentPagePublicFiles.value = page
   }
 }
+
+
 </script>
 
 <template>

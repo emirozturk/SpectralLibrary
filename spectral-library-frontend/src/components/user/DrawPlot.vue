@@ -1,99 +1,86 @@
 <script setup>
-import { ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, watch, defineProps, onMounted, onBeforeUnmount } from 'vue'
 import Plotly from 'plotly.js-dist'
 import { getAllWithToken } from '../../../lib/fetch-api'
 
-const route = useRoute()
-const router = useRouter()
+const props = defineProps({
+  selectedIds: {
+    type: Array,
+    default: () => []
+  }
+})
+
 const plotData = ref([])
 const layout = ref({})
 const useSeparateYAxes = ref(false)
+const plotContainer = ref(null)  // Ref for the chart container element
+let resizeObserver = null
 
-const setupPlot = async (idsParam) => {
-  console.log("setupPlot called with idsParam:", idsParam)
-  if (!idsParam) {
-    alert('No files selected for plotting.')
-    router.push('/user/mainpage') // Adjust route as needed
+const setupPlot = async () => {
+  if (!props.selectedIds || props.selectedIds.length === 0) {
+    // Optionally, clear the plot if no IDs are provided.
+    return
+  }
+  const fileIds = props.selectedIds.join(',')
+  const apiUrl = `spectfiles/draw?ids=${fileIds}`
+  const response = await getAllWithToken(apiUrl, null)
+
+  if (!response.isSuccess) {
+    alert(response.message || 'Failed to fetch files.')
     return
   }
 
-  try {
-    // Build the URL manually to include the query parameter "ids"
-    const apiUrl = `spectfiles/draw?ids=${idsParam}`
-    console.log("Calling API with URL:", apiUrl)
-    const response = await getAllWithToken(apiUrl, null)
-
-    if (!response.isSuccess) {
-      throw new Error(response.message || 'Failed to fetch files.')
-    }
-
-    const filesToPlot = response.body
-    if (!filesToPlot || filesToPlot.length === 0) {
-      alert('Selected files not found.')
-      router.push('/user/mainpage')
-      return
-    }
-
-    // Prepare Plotly data based on the file data from backend.
-    // Transform the array of objects to separate x and y arrays.
-    // Change mode to 'lines' to not show the individual points.
-    plotData.value = filesToPlot.map((file, index) => ({
-      x: file.data.map(point => point.x),
-      y: file.data.map(point => point.y),
-      mode: 'lines',
-      type: 'scatter',
-      name: file.description,
-      yaxis: useSeparateYAxes.value ? `y${index + 1}` : 'y'
-    }))
-
-    // Define layout for the plot.
-    layout.value = {
-      title: 'Files Data Plot',
-      xaxis: {
-        title: 'X Axis',
-        showgrid: true,
-        zeroline: false
-      },
-      yaxis: {
-        title: 'Y Axis',
-        showline: false
-      },
-      autosize: true
-    }
-
-    if (useSeparateYAxes.value) {
-      plotData.value.forEach((_, index) => {
-        if (index > 0) {
-          layout.value[`yaxis${index + 1}`] = {
-            title: `Y Axis ${index + 1}`,
-            overlaying: 'y',
-            side: 'right'
-          }
-        }
-      })
-    }
-
-    // Create the Plotly chart.
-    Plotly.newPlot('plotly-chart', plotData.value, layout.value, {
-      displayModeBar: true,
-      responsive: true
-    })
-  } catch (error) {
-    console.error("Error in setupPlot:", error)
-    alert(error.message)
-    router.push('/user/mainpage')
+  const filesToPlot = response.body
+  if (!filesToPlot || filesToPlot.length === 0) {
+    alert('Selected files not found.')
+    return
   }
+
+  plotData.value = filesToPlot.map((file, index) => ({
+    x: file.data.map(point => point.x),
+    y: file.data.map(point => point.y),
+    mode: 'lines',
+    type: 'scatter',
+    name: file.description,
+    yaxis: useSeparateYAxes.value ? `y${index + 1}` : 'y'
+  }))
+
+  layout.value = {
+    title: 'Files Data Plot',
+    xaxis: {
+      title: 'X Axis',
+      showgrid: true,
+      zeroline: false
+    },
+    yaxis: {
+      title: 'Y Axis',
+      showline: false
+    },
+    autosize: true
+  }
+
+  if (useSeparateYAxes.value) {
+    plotData.value.forEach((_, index) => {
+      if (index > 0) {
+        layout.value[`yaxis${index + 1}`] = {
+          title: `Y Axis ${index + 1}`,
+          overlaying: 'y',
+          side: 'right'
+        }
+      }
+    })
+  }
+
+  Plotly.newPlot('plotly-chart', plotData.value, layout.value, {
+    displayModeBar: true,
+    responsive: true
+  })
 }
 
-// Watch for changes in the route query parameter "ids" and call setupPlot immediately.
-watch(
-  () => route.query.ids,
-  (newIds) => {
-    setupPlot(newIds)
-  },
-  { immediate: true }
-)
+// Watch for changes in selectedIds and update the plot.
+watch(() => props.selectedIds, () => {
+  setupPlot()
+}, { immediate: true })
 
 const handleDownload = () => {
   const plotElement = document.getElementById('plotly-chart')
@@ -112,21 +99,33 @@ const handleDownload = () => {
 
 const toggleYAxes = () => {
   useSeparateYAxes.value = !useSeparateYAxes.value
-  setupPlot(route.query.ids)
+  setupPlot()
 }
+
+// Use a ResizeObserver to trigger Plotly resize when the container changes.
+onMounted(() => {
+  if (plotContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      Plotly.Plots.resize(plotContainer.value)
+    })
+    resizeObserver.observe(plotContainer.value)
+  }
+})
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+  }
+})
 </script>
 
 <template>
   <div class="p-8 max-w-full mx-auto bg-white-50 rounded-lg min-h-screen flex flex-col space-y-8">
-    <h1 class="text-4xl font-bold text-blue-700 mb-6 text-center">Plot Drawing</h1>
-
     <!-- Plotly Chart -->
-    <div class="bg-white p-6 rounded-lg flex-1">
+    <div class="bg-white p-6 rounded-lg flex-1" ref="plotContainer">
       <div id="plotly-chart" style="width: 100%; height: 100%"></div>
     </div>
-
-    <!-- Controls -->
-    <div class="flex space-x-4">
+    <!-- Controls with bottom margin -->
+    <div class="flex space-x-4 mb-4">
       <button
         @click="handleDownload"
         class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -146,6 +145,6 @@ const toggleYAxes = () => {
 <style scoped>
 #plotly-chart {
   min-height: 500px;
-  height: calc(100vh - 200px); /* Adjust height to use full page */
+  height: calc(100vh - 250px); /* Adjust as needed to accommodate controls */
 }
 </style>

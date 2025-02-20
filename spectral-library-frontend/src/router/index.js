@@ -5,7 +5,6 @@ import LoginPage from '@/components/LoginPage.vue';
 import RegisterPage from '@/components/RegisterPage.vue';
 import ForgotPasswordPage from '@/components/ForgotPasswordPage.vue';
 import UserLayout from '@/components/user/UserLayout.vue';
-import MainPage from '@/components/user/MainPage.vue';
 import FolderManagement from '@/components/user/FolderManagement.vue';
 import UploadFilePage from '@/components/user/UploadFilePage.vue';
 import DrawPlot from '@/components/user/DrawPlot.vue';
@@ -14,6 +13,7 @@ import AdminLayout from '@/components/admin/AdminLayout.vue';
 import AdminMainPage from '@/components/admin/AdminMainPage.vue';
 import CategoryManagement from '@/components/admin/CategoryManagement.vue';
 import UserManagement from '@/components/admin/UserManagement.vue';
+import MainLayout from '@/components/user/MainLayout.vue';
 
 const routes = [
   { path: '', name: 'LoginMain', component: LoginPage },
@@ -26,7 +26,7 @@ const routes = [
     path: '/user',
     component: UserLayout,
     children: [
-      { path: 'mainpage', name: 'MainPage', component: MainPage },
+      { path: 'main-layout', name: 'MainLayout', component: MainLayout },
       { path: 'folder-management', name: 'FolderManagement', component: FolderManagement },
       { path: 'upload-file', name: 'UploadFile', component: UploadFilePage },
       { path: 'update-info', name: 'UpdateInfo', component: UpdateInfoPage },

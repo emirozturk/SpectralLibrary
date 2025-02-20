@@ -30,7 +30,7 @@ const handleSubmit = async () => {
       if (response.body.user.type === "admin") {
         router.push("/admin/mainpage")
       } else
-        router.push("/user/mainpage")
+        router.push("/user/main-layout")
     } else {
       error.value = response.message || "Login failed"
     }
