@@ -119,13 +119,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="p-8 max-w-full mx-auto bg-white-50 rounded-lg min-h-screen flex flex-col space-y-8">
-    <!-- Plotly Chart -->
-    <div class="bg-white p-6 rounded-lg flex-1" ref="plotContainer">
-      <div id="plotly-chart" style="width: 100%; height: 100%"></div>
+  <!-- Remove min-h-screen and use h-full to fill the available space -->
+  <div class="p-8 h-full max-w-full mx-auto bg-white-50 rounded-lg flex flex-col">
+    <!-- Chart Container -->
+    <div class="flex-1 overflow-hidden">
+      <div class="bg-white p-6 rounded-lg h-full" ref="plotContainer">
+        <div id="plotly-chart" class="w-full h-full"></div>
+      </div>
     </div>
-    <!-- Controls with bottom margin -->
-    <div class="flex space-x-4 mb-4">
+    <!-- Controls (centered) -->
+    <div class="flex justify-center space-x-4 mt-4">
       <button
         @click="handleDownload"
         class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -142,9 +145,11 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
+
 <style scoped>
+/* Ensure the Plotly chart fills its container */
 #plotly-chart {
-  min-height: 500px;
-  height: calc(100vh - 250px); /* Adjust as needed to accommodate controls */
+  width: 100%;
+  height: 100%;
 }
 </style>

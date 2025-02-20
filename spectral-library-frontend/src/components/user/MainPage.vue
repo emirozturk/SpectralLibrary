@@ -366,8 +366,7 @@ const changePagePublicFiles = (page) => {
 </script>
 
 <template>
-  <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg min-h-screen flex flex-col space-y-8">
-    <h1 class="text-4xl font-bold text-blue-700 text-center mb-6">User Main Page</h1>
+   <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg h-full flex flex-col space-y-8">
 
     <!-- Public Spectra Section -->
     <Disclosure>
