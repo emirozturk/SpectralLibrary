@@ -404,9 +404,9 @@ const changePagePublicFiles = (page) => {
             <div v-for="file in paginatedPublicFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedPublicFiles" :value="file" class="mr-2" />
-                <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
+                <h3 class="text-l font-bold">{{ file.description || file.name }}</h3>
               </div>
-              <p class="mt-1 text-sm">
+              <p class="mt-1 text-xs">
                 Category: {{ file.category || 'N/A' }} |
                 Subcategory: {{ file.subcategory || 'N/A' }} |
                 Folder: {{ file.folder || 'N/A' }} |
@@ -460,9 +460,9 @@ const changePagePublicFiles = (page) => {
             <div v-for="file in paginatedSharedFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedSharedFiles" :value="file" class="mr-2" />
-                <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
+                <h3 class="text-l font-bold">{{ file.description || file.name }}</h3>
               </div>
-              <p class="mt-1 text-sm">
+              <p class="mt-1 text-xs">
                 Category: {{ file.category || 'N/A' }} |
                 Subcategory: {{ file.subcategory || 'N/A' }} |
                 Folder: {{ file.folder || 'N/A' }} |
@@ -517,9 +517,9 @@ const changePagePublicFiles = (page) => {
               <div>
                 <div class="flex items-center space-x-2">
                   <input type="checkbox" v-model="selectedMyFiles" :value="file" class="mr-2" />
-                  <h3 class="text-xl font-bold">{{ file.description || file.name }}</h3>
+                  <h3 class="text-l font-bold">{{ file.description || file.name }}</h3>
                 </div>
-                <p class="mt-1 text-sm">
+                <p class="mt-1 text-xs">
                   Category: {{ file.category || 'N/A' }} |
                   Subcategory: {{ file.subcategory || 'N/A' }} |
                   Folder: {{ file.folder || 'N/A' }} |
