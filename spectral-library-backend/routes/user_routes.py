@@ -1,8 +1,21 @@
+import random
+import string
+from flask_mail import Mail, Message  # Ensure Flask-Mail is installed
+from werkzeug.security import generate_password_hash
+
 from flask import Blueprint, request, jsonify, abort
 from datetime import datetime
 from utils.db import get_session
 from models.models import User
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+# Initialize Flask-Mail (add this to your app initialization code)
+# app.config["MAIL_SERVER"] = "smtp.example.com"
+# app.config["MAIL_PORT"] = 587
+# app.config["MAIL_USE_TLS"] = True
+# app.config["MAIL_USERNAME"] = "your-email@example.com"
+# app.config["MAIL_PASSWORD"] = "your-email-password"
+# mail = Mail(app)
 
 user_bp = Blueprint("user_bp", __name__, url_prefix="/users")
 
@@ -196,7 +209,7 @@ def forgot_password():
                 "body": "Email is required."
             }), 400
 
-        user = session.query(User).filter(User.email == email,User.deleted_at.is_(None)).first()
+        user = session.query(User).filter(User.email == email, User.deleted_at.is_(None)).first()
 
         if not user:
             return jsonify({
@@ -204,12 +217,28 @@ def forgot_password():
                 "body": "User not found."
             }), 404
 
-        user.password = "202cb962ac59075b964b07152d234b70"
+        # Generate a random password
+        random_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        # Hash the password before saving it
+        hashed_password = generate_password_hash(random_password)
+
+        # Update the user's password in the database
+        user.password = hashed_password
         session.commit()
+
+        # Send the email with the new password
+        msg = Message(
+            subject="Password Reset",
+            sender="your-email@example.com",
+            recipients=[email],
+            body=f"Your new password is: {random_password}"
+        )
+        mail.send(msg)
 
         return jsonify({
             "isSuccess": True,
-            "body": "Password reset."
+            "body": "Password reset email sent."
         }), 200
     except Exception as e:
         return jsonify({
@@ -218,6 +247,7 @@ def forgot_password():
         }), 500
     finally:
         session.close()
+
 
 @user_bp.delete("/<int:user_id>")
 @jwt_required()
