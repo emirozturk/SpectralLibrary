@@ -527,9 +527,6 @@ const changePagePublicFiles = (page) => {
                 </p>
               </div>
               <div class="flex space-x-2 mt-4 md:mt-0">
-                <button @click="togglePublic(file)" class="p-2 bg-yellow-500 hover:bg-yellow-600 rounded">
-                  <component :is="file.is_public ? EyeIcon : EyeSlashIcon" class="w-6 h-6 text-white" />
-                </button>
                 <button @click="shareFile(file)" class="p-2 bg-blue-500 hover:bg-blue-600 rounded">
                   <ShareIcon class="w-6 h-6 text-white" />
                 </button>

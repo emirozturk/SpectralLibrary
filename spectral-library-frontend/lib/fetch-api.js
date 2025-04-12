@@ -4,85 +4,122 @@ export default API_BASE_URL;
 export async function getAll(route, id) {
   const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
   return await response.json();
 }
 export async function getAllWithToken(route, id) {
-  try{
+  try {
     const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;
-    var token = localStorage.getItem('token').replaceAll('"', '')
+    var token = localStorage.getItem("token").replaceAll('"', "");
     const response = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
 
         Authorization: `Bearer ${token}`,
       },
     });
     return await response.json();
-  }catch(e){
-    console.log(e)
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
   }
 }
 
-
 export async function post(route, object) {
-  const response = await fetch(`${API_BASE_URL}/${route}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(object),
-  });
-  return await response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/${route}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(object),
+    });
+    return await response.json();
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
+  }
 }
 
 export async function postWithToken(route, object) {
-  const response = await fetch(`${API_BASE_URL}/${route}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
-    },
-    body: JSON.stringify(object),
-  });
-  return await response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/${route}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token").replaceAll('"', "")}`,
+      },
+      body: JSON.stringify(object),
+    });
+    return await response.json();
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
+  }
 }
 
 export async function put(route, object) {
-  const response = await fetch(`${API_BASE_URL}/${route}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(object),
-  });
-  return await response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/${route}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(object),
+    });
+    return await response.json();
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
+  }
 }
 
 export async function putWithToken(route, object) {
-  const response = await fetch(`${API_BASE_URL}/${route}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
-    },
-    body: JSON.stringify(object),
-  });
-  return await response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/${route}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token").replaceAll('"', "")}`,
+      },
+      body: JSON.stringify(object),
+    });
+    return await response.json();
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
+  }
 }
 
 export async function delWithToken(route, id) {
-  const response = await fetch(`${API_BASE_URL}/${route}/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token').replaceAll("\"", "")}`,
-    },
-  });
-  return await response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/${route}/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token").replaceAll('"', "")}`,
+      },
+    });
+    return await response.json();
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.message,
+    };
+  }
 }

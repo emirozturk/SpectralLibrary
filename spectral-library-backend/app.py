@@ -5,11 +5,12 @@ from utils.db import engine
 from routes import category_routes, dashboard_routes, folder_routes, spectfile_routes, subcategory_routes, user_routes,auth_router
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-
+from datetime import timedelta
 
 app = Flask(__name__)
 CORS(app)
 app.config["JWT_SECRET_KEY"] = "emirozturkandspectrallibrary"
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=4)
 
 Base.metadata.create_all(bind=engine)
 

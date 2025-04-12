@@ -1,6 +1,0 @@
-- Hem lokalde hem backendde listeler saklanıyor. Bunun yerine listelerin backendden güncellenmesi metoduna geçilmeli
-- Isdeleted alanı kontrol edilerek getirilmemeli
-- Jwt token kontrol edilmeli, user mı admin mi kısmı eklenmeli, id'ler oradan alınabilir
-- Hatalı dosya isim vs kontrolü
-- Temalar
-- confirmed olmayanlar girebiliyor
