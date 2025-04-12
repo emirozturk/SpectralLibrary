@@ -15,6 +15,7 @@ export default defineConfig({
   base: '/',  // Ensures correct routing
   server: {
     port: 5173, // Adjust if needed
+    sourcemap: true,
     historyApiFallback: true  // Enables fallback for Vue Router
   },
   build: {

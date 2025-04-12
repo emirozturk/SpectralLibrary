@@ -2,14 +2,28 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default API_BASE_URL;
 
 export async function getAll(route, id) {
-  const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  return await response.json();
+  try{
+    const url = id !== null ? `${API_BASE_URL}/${route}?id=${id}` : `${API_BASE_URL}/${route}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
+  } catch (e) {
+    return {
+      isSuccess: false,
+      message: e.msg,
+    };
+  }
 }
 export async function getAllWithToken(route, id) {
   try {
@@ -23,11 +37,18 @@ export async function getAllWithToken(route, id) {
         Authorization: `Bearer ${token}`,
       },
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
@@ -41,11 +62,18 @@ export async function post(route, object) {
       },
       body: JSON.stringify(object),
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
@@ -60,11 +88,18 @@ export async function postWithToken(route, object) {
       },
       body: JSON.stringify(object),
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
@@ -78,11 +113,18 @@ export async function put(route, object) {
       },
       body: JSON.stringify(object),
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
@@ -97,11 +139,18 @@ export async function putWithToken(route, object) {
       },
       body: JSON.stringify(object),
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
@@ -115,11 +164,18 @@ export async function delWithToken(route, id) {
         Authorization: `Bearer ${localStorage.getItem("token").replaceAll('"', "")}`,
       },
     });
-    return await response.json();
+    var resp = await response.json();
+    if(resp.msg){
+      return {
+        isSuccess: false,
+        message: resp.msg,
+      };
+    }
+    return resp;
   } catch (e) {
     return {
       isSuccess: false,
-      message: e.message,
+      message: e.msg,
     };
   }
 }
