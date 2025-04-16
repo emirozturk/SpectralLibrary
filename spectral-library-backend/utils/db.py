@@ -3,8 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 DATABASE_URL = (
-    "mysql+pymysql://avnadmin:AVNS_PrqutowVLsZLpooUFLJ@"
-    "spectraldb-emirozturk3-59c8.j.aivencloud.com:28938/defaultdb?charset=utf8mb4"
+    "mysql+pymysql://root:spectralDbUser!@"
+    "localhost:3306/defaultdb?charset=utf8mb4"
 )
 timeout = 10
 
