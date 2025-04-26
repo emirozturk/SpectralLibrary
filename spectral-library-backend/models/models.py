@@ -66,7 +66,7 @@ class User(Base):
     company = Column(String(100), nullable=True)
     created_at = Column(DateTime, nullable=True, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
-    
+    has_auth_for_public = Column(Integer,nullable=True)
     # A user can own many folders and can be associated with many shared files.
     folders = relationship("Folder", back_populates="owner")
     shared_files = relationship("SharedFile", back_populates="user")

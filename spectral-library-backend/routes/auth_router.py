@@ -17,7 +17,7 @@ def login():
             abort(400, description="Email and password are required.")
 
         session = get_session()
-        user = session.query(User).filter(User.email == email and User.deleted_at).first()
+        user = session.query(User).filter(User.email == email , User.deleted_at.is_(None)).first()
         if not user or not user.password == password:
             abort(401, description="Invalid credentials")
         if not user.is_confirmed:

@@ -45,6 +45,7 @@ create table users
     company      varchar(100) null,
     created_at   datetime     null,
     deleted_at   datetime     null,
+    has_auth_for_public int null,
     constraint email
         unique (email)
 );

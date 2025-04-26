@@ -1,8 +1,10 @@
 <script setup lang="js">
-import { ref, computed, onMounted,defineEmits } from 'vue'
+import { ref, computed, onMounted, defineEmits } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel, Dialog } from '@headlessui/vue'
 import { getAllWithToken, putWithToken, delWithToken } from '../../../lib/fetch-api'
 import { EyeIcon, EyeSlashIcon, ShareIcon, TrashIcon } from '@heroicons/vue/24/solid'
+
+const user = ref(null);
 
 const emit = defineEmits(['draw']) // <-- Declare an event to send selected file IDs to the parent
 
@@ -85,6 +87,10 @@ const fetchFolders = async () => {
 }
 
 onMounted(async () => {
+  const storedUser = localStorage.getItem("user");
+  if (storedUser) {
+    user.value = JSON.parse(storedUser);
+  }
   await fetchInitialData()
   await fetchCategories()
   await fetchFolders()
@@ -177,9 +183,9 @@ const mySubcategoryOptions = computed(() => {
   const selectedCat = categories.value.find(cat => cat.name_en === myFilterCategory.value)
   return selectedCat && selectedCat.subcategories
     ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
-        id: sub.name_en,
-        name: sub.name_en
-      }))
+      id: sub.name_en,
+      name: sub.name_en
+    }))
     : []
 })
 
@@ -188,9 +194,9 @@ const sharedSubcategoryOptions = computed(() => {
   const selectedCat = categories.value.find(cat => cat.name_en === sharedFilterCategory.value)
   return selectedCat && selectedCat.subcategories
     ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
-        id: sub.name_en,
-        name: sub.name_en
-      }))
+      id: sub.name_en,
+      name: sub.name_en
+    }))
     : []
 })
 
@@ -199,9 +205,9 @@ const publicSubcategoryOptions = computed(() => {
   const selectedCat = categories.value.find(cat => cat.name_en === publicFilterCategory.value)
   return selectedCat && selectedCat.subcategories
     ? selectedCat.subcategories.filter(sub => !sub.deleted_at).map(sub => ({
-        id: sub.name_en,
-        name: sub.name_en
-      }))
+      id: sub.name_en,
+      name: sub.name_en
+    }))
     : []
 })
 
@@ -366,12 +372,13 @@ const changePagePublicFiles = (page) => {
 </script>
 
 <template>
-   <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg h-full flex flex-col space-y-8">
+  <div class="p-8 max-w-7xl mx-auto bg-white rounded-lg h-full flex flex-col space-y-8">
 
     <!-- Public Spectra Section -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+        <DisclosureButton
+          class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
           <span class="text-blue-700 font-medium">Public Spectra</span>
           <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
@@ -398,10 +405,12 @@ const changePagePublicFiles = (page) => {
             </select>
           </div>
           <!-- Search Input -->
-          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <input type="text" v-model="searchPublicFiles" placeholder="Search public files..."
+            class="w-full p-2 border border-gray-300 rounded-md mb-4" />
           <!-- Files List -->
           <div class="grid gap-4">
-            <div v-for="file in paginatedPublicFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
+            <div v-for="file in paginatedPublicFiles" :key="file.id"
+              class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedPublicFiles" :value="file" class="mr-2" />
                 <h3 class="text-l font-bold">{{ file.description || file.name }}</h3>
@@ -416,9 +425,12 @@ const changePagePublicFiles = (page) => {
           </div>
           <!-- Pagination Controls -->
           <div class="flex justify-center mt-4">
-            <button @click="changePagePublicFiles(currentPagePublicFiles - 1)" :disabled="currentPagePublicFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <button @click="changePagePublicFiles(currentPagePublicFiles - 1)" :disabled="currentPagePublicFiles === 1"
+              class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
             <span class="px-3 py-1 bg-gray-100">{{ currentPagePublicFiles }} / {{ totalPagesPublicFiles }}</span>
-            <button @click="changePagePublicFiles(currentPagePublicFiles + 1)" :disabled="currentPagePublicFiles === totalPagesPublicFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
+            <button @click="changePagePublicFiles(currentPagePublicFiles + 1)"
+              :disabled="currentPagePublicFiles === totalPagesPublicFiles"
+              class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
           </div>
         </DisclosurePanel>
       </template>
@@ -427,7 +439,8 @@ const changePagePublicFiles = (page) => {
     <!-- Shared Spectra Section -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+        <DisclosureButton
+          class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
           <span class="text-blue-700 font-medium">Shared Spectra</span>
           <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
@@ -454,10 +467,12 @@ const changePagePublicFiles = (page) => {
             </select>
           </div>
           <!-- Search Input -->
-          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <input type="text" v-model="searchSharedFiles" placeholder="Search shared files..."
+            class="w-full p-2 border border-gray-300 rounded-md mb-4" />
           <!-- Files List -->
           <div class="grid gap-4">
-            <div v-for="file in paginatedSharedFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4">
+            <div v-for="file in paginatedSharedFiles" :key="file.id"
+              class="bg-white border border-gray-200 rounded-lg p-4">
               <div class="flex items-center space-x-2">
                 <input type="checkbox" v-model="selectedSharedFiles" :value="file" class="mr-2" />
                 <h3 class="text-l font-bold">{{ file.description || file.name }}</h3>
@@ -472,9 +487,12 @@ const changePagePublicFiles = (page) => {
           </div>
           <!-- Pagination Controls -->
           <div class="flex justify-center mt-4">
-            <button @click="changePageSharedFiles(currentPageSharedFiles - 1)" :disabled="currentPageSharedFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <button @click="changePageSharedFiles(currentPageSharedFiles - 1)" :disabled="currentPageSharedFiles === 1"
+              class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
             <span class="px-3 py-1 bg-gray-100">{{ currentPageSharedFiles }} / {{ totalPagesSharedFiles }}</span>
-            <button @click="changePageSharedFiles(currentPageSharedFiles + 1)" :disabled="currentPageSharedFiles === totalPagesSharedFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
+            <button @click="changePageSharedFiles(currentPageSharedFiles + 1)"
+              :disabled="currentPageSharedFiles === totalPagesSharedFiles"
+              class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
           </div>
         </DisclosurePanel>
       </template>
@@ -483,7 +501,8 @@ const changePagePublicFiles = (page) => {
     <!-- My Spectra Section -->
     <Disclosure>
       <template #default="{ open }">
-        <DisclosureButton class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
+        <DisclosureButton
+          class="flex justify-between items-center w-full px-4 py-2 bg-white border border-gray-200 rounded-lg">
           <span class="text-blue-700 font-medium">My Spectra</span>
           <span class="text-xl text-blue-700">{{ open ? '-' : '+' }}</span>
         </DisclosureButton>
@@ -510,10 +529,12 @@ const changePagePublicFiles = (page) => {
             </select>
           </div>
           <!-- Search Input -->
-          <input type="text" v-model="searchMyFiles" placeholder="Search your files..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+          <input type="text" v-model="searchMyFiles" placeholder="Search your files..."
+            class="w-full p-2 border border-gray-300 rounded-md mb-4" />
           <!-- Files List -->
           <div class="grid gap-4">
-            <div v-for="file in paginatedMyFiles" :key="file.id" class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center">
+            <div v-for="file in paginatedMyFiles" :key="file.id"
+              class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center">
               <div>
                 <div class="flex items-center space-x-2">
                   <input type="checkbox" v-model="selectedMyFiles" :value="file" class="mr-2" />
@@ -527,6 +548,10 @@ const changePagePublicFiles = (page) => {
                 </p>
               </div>
               <div class="flex space-x-2 mt-4 md:mt-0">
+
+                <button v-if="user.has_auth_for_public === 1" @click="togglePublic(file)" class="p-2 bg-yellow-500 hover:bg-yellow-600 rounded">
+                  <component :is="file.is_public ? EyeIcon : EyeSlashIcon" class="w-6 h-6 text-white" />
+                </button>
                 <button @click="shareFile(file)" class="p-2 bg-blue-500 hover:bg-blue-600 rounded">
                   <ShareIcon class="w-6 h-6 text-white" />
                 </button>
@@ -538,9 +563,12 @@ const changePagePublicFiles = (page) => {
           </div>
           <!-- Pagination Controls -->
           <div class="flex justify-center mt-4">
-            <button @click="changePageMyFiles(currentPageMyFiles - 1)" :disabled="currentPageMyFiles === 1" class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
+            <button @click="changePageMyFiles(currentPageMyFiles - 1)" :disabled="currentPageMyFiles === 1"
+              class="px-3 py-1 bg-gray-300 rounded-l-md">Previous</button>
             <span class="px-3 py-1 bg-gray-100">{{ currentPageMyFiles }} / {{ totalPagesMyFiles }}</span>
-            <button @click="changePageMyFiles(currentPageMyFiles + 1)" :disabled="currentPageMyFiles === totalPagesMyFiles" class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
+            <button @click="changePageMyFiles(currentPageMyFiles + 1)"
+              :disabled="currentPageMyFiles === totalPagesMyFiles"
+              class="px-3 py-1 bg-gray-300 rounded-r-md">Next</button>
           </div>
         </DisclosurePanel>
       </template>
@@ -548,7 +576,8 @@ const changePagePublicFiles = (page) => {
 
     <!-- Draw Plot Button -->
     <div class="mt-6">
-      <button @click="drawPlot" class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+      <button @click="drawPlot"
+        class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
         Draw Plot
       </button>
     </div>
@@ -558,12 +587,14 @@ const changePagePublicFiles = (page) => {
       <div class="min-h-screen px-4 text-center">
         <Dialog.Overlay class="fixed inset-0 bg-black opacity-30" />
         <span class="inline-block h-screen align-middle" aria-hidden="true">&#8203;</span>
-        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
+        <div
+          class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
           <Dialog.Title class="text-lg font-medium leading-6 text-gray-900">
             Share File: {{ currentFileToShare?.description || currentFileToShare?.name }}
           </Dialog.Title>
           <div class="mt-4">
-            <input type="text" v-model="searchUsers" placeholder="Search users..." class="w-full p-2 border border-gray-300 rounded-md mb-4" />
+            <input type="text" v-model="searchUsers" placeholder="Search users..."
+              class="w-full p-2 border border-gray-300 rounded-md mb-4" />
             <div class="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-2">
               <div v-for="user in filteredUsers" :key="user.id" class="flex items-center py-1">
                 <input type="checkbox" :value="user.email" v-model="selectedUserEmails" class="mr-2" />
@@ -575,7 +606,8 @@ const changePagePublicFiles = (page) => {
             </div>
           </div>
           <div class="mt-6 flex justify-end space-x-2">
-            <button @click="showShareModal = false" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">
+            <button @click="showShareModal = false"
+              class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">
               Cancel
             </button>
             <button @click="confirmShare" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
