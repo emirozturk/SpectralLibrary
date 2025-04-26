@@ -32,6 +32,7 @@ def login():
                              "email": user.email,
                              "type": user.type,
                              "company": user.company, 
+                             "has_auth_for_public":user.has_auth_for_public
                              },
                     "token": access_token
                 }
