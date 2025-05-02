@@ -2,9 +2,18 @@
   <system.webServer>
     <rewrite>
       <rules>
-        <rule name="Flask Proxy" stopProcessing="true">
-          <match url="^(auth|categories|dashboard|users|folders|spectfile|subcategory)(/.*)?$" />
+        <rule name="Flask API Proxy" stopProcessing="true">
+          <match url="^(auth|user)(/.*)?$" />
           <action type="Rewrite" url="http://127.0.0.1:5000/{R:0}" />
+        </rule>
+
+        <rule name="Vite SPA Fallback" stopProcessing="true">
+          <match url=".*" />
+          <conditions>
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="/index.html" />
         </rule>
       </rules>
     </rewrite>
