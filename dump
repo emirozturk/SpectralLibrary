@@ -1,12 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
   <system.webServer>
+    <!-- Serve unknown file types correctly -->
+    <staticContent>
+      <remove fileExtension=".json" />
+      <mimeMap fileExtension=".json" mimeType="application/json" />
+    </staticContent>
+
+    <!-- Redirect all non-file/non-folder requests back to index.html -->
     <rewrite>
       <rules>
         <rule name="SPA Fallback" stopProcessing="true">
           <match url=".*" />
           <conditions logicalGrouping="MatchAll">
+            <!-- skip actual files -->
             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <!-- skip actual folders -->
             <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+            <!-- skip API proxy prefix -->
+            <add input="{REQUEST_URI}" pattern="^/api" negate="true" />
           </conditions>
           <action type="Rewrite" url="/" />
         </rule>
